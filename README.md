@@ -31,7 +31,7 @@ h *e* l **l** o  *номер 1*
 
 ![НЕ КОТИК](https://itmo.ru/file/pages/213/slogan_belyy.png)
 
-# Code
+# Code 0
 ```python
 def a+b(a, b):
     return a+b
@@ -46,12 +46,12 @@ print(a+b(2, 2))
 | Восьмиричный       | **1** | *2*  | 3 |        
 | щестнадцетиричный  | **1** | *2*  | 3 |  
 
-### Formula
+### Formula 0
 $$
 y = \sin(\log_e{x})
 $$
 
-### Formula 2
+### Formula 1
 $$
 e = mc^2
 $$
