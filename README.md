@@ -29,7 +29,7 @@ h *e* l **l** o  *номер 1*
 
 ### **[ITMO](https://itmo.ru/)**
 
-[КОТИК](Ангорская кошка)
+[НЕ КОТИК](https://itmo.ru/ru/page/213/logotipy_i_firmennyy_stil.htm)
 
 
 
