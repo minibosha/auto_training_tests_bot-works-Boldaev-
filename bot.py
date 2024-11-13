@@ -22,6 +22,14 @@ tests_name_math = ('Полные квадратные уравнения', )
 tests_name_phys = ('', )
 statistics = {}
 
+# Функция для превращения в ответ без факторов ошибок в сообщение
+def right_message(command):
+    user_object = command.text
+    user_object = user_object.replace('.', '')
+    user_object = user_object.lower()
+
+    return user_object
+
 
 # Класс для тестов по математике
 class math:
@@ -73,7 +81,7 @@ def help_for_user(message):
             else:
                 table_str += "| " + word
                 table_str += ' ' * (112 - len(word))
-        table_str += '\n'
+        table_str += '\n\n'
         change = True
 
     bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
@@ -87,9 +95,7 @@ def help_for_user(message):
 @bot.message_handler(commands=['tests'])
 def math_or_phys(object0):
     # Убираем факторы которые могу быть причиной неизвестного сообщения
-    user_object = object0.text
-    user_object = user_object.replace('.', '')
-    user_object = user_object.lower()
+    user_object = right_message(object0)
 
     # Вывод результата в зависимости от ответа
     if user_object in ('/tests math', '/tests математика'):
