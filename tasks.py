@@ -98,6 +98,7 @@ print(sorted_drivers[0][0])
 '''
 
 # Задание 2
+'''
 # Скачиваем библиотеку для вычислений
 import math
 
@@ -163,6 +164,7 @@ class Circle:
 
 
 # Ввод и вывод ответов на задачи
+
 # Длина отрезка
 X1, Y1, X2, Y2 = map(int, input().split())
 
@@ -172,4 +174,163 @@ print(p1.find_distance(p2))
 
 # Площадь треугольника
 x1, y1, x2, y2, x3, y3 = map(int, input().split())
+p1 = Point([x1, y1])
+p2 = Point([x2, y2])
+p3 = Point([x3, y3])
+triangle = Triangle(p1.copy_point(), p2.copy_point(), p3.copy_point())
 
+print(triangle.find_area())
+
+# Две окружности
+x1, y1, r1 = map(int, input().split())
+x2, y2, r2 = map(int, input().split())
+
+circle1 = Circle(Point([x1, y1]), r1)
+circle2 = Circle(Point([x2, y2]), r2)
+
+print("YES" if circle1.has_common_points(circle2) else "NO")
+
+# Треугольник и точка
+x1, y1 = map(int, input().split())
+x2, y2 = map(int, input().split())
+x3, y3 = map(int, input().split())
+x4, y4 = map(int, input().split())
+
+p1 = Point([x1, y1])
+p2 = Point([x2, y2])
+p3 = Point([x3, y3])
+p4 = Point([x4, y4])
+
+triangle = Triangle(p1.copy_point(), p2.copy_point(), p3.copy_point())
+
+print("In" if triangle.is_point_inside(p4) else "Out")
+
+# Развлечения с измерителем
+points = []
+for _ in range(int(input())):
+    x, y = map(int, input().split())
+    points.append(Point([x, y]))
+
+answer = []
+for point in points:
+    for p in points:
+        answer.append(point.find_distance(p))
+
+answer = sorted(set(answer))[1:]
+print(len(answer))
+for s in answer:
+    print(s)
+'''
+
+# Задание 3
+'''
+# Сотовые связь в большом городе
+
+# Класс для работы с абонентом
+class Operator:
+    def __init__(self):
+        self.mobile_operators = {}
+
+    # Функция добавление станции
+    def add_station(self, name, x, y, r):
+        self.mobile_operators.setdefault(name, []).append(Circle(Point([x, y]), r))
+
+    def show_stations(self):
+        return self.mobile_operators.keys()
+
+    def check_connection(self, other, operator):
+        return len([True for operator in self.mobile_operators[operator] if operator.is_point_inside(other)])
+
+
+# Ввод данных
+# Сохраняем операторов
+operators = Operator()
+for _ in range(int(input())):
+    name = input()
+    x, y, r = map(int, input().split())
+    operators.add_station(name, x, y, r)
+
+# Ввод координаты абонента
+x1, y1 = map(int, input().split())
+subscriber_point = Point([x1, y1])
+
+# Проверка количества точек в радиусе
+answer = []
+for operator in operators.show_stations():
+    answer.append([operator, operators.check_connection(subscriber_point, operator)])
+
+# Выводим ответ
+print(len(answer))
+for a in answer:
+    print(*a)
+'''
+
+# Задание 4
+# Прыжки в длину
+# Изменение в задаче: последняя строка - вывод топа произвольного размера спортсменов
+# Класс для вывода результата
+class Result:
+    @staticmethod
+    def check_participants(jumps):
+        # Преобразуем прыжки в список, игнорируя "x"
+        valid_jumps = [float(jump) for jump in jumps if jump != 'x']
+
+        if valid_jumps:
+            return valid_jumps
+
+
+    @staticmethod
+    def filter_participants(participants):
+        return participants.sort(key=lambda p: sorted(p[3], reverse=True), reverse=True)
+
+    @staticmethod
+    def get_top(participants, number):
+        if not participants:
+            return "No results."
+        else:
+            top = []
+            for i in range(min(number, len(participants))):
+                country, name, surname, jumps = participants[i]
+                top.append([country, name, surname, max(jumps)])
+
+            return top
+
+
+# Класс для вывода таблиц и сохранения результата
+class Table:
+    def __init__(self):
+        self.participants = []
+
+    def add_participant(self, country, name, surname, valid_jumps):
+        self.participants.append([country, name, surname, valid_jumps])
+
+
+# Создаём объект класса для таблицы
+table = Table()
+
+# Ввод данных
+for _ in range(int(input())):
+    line = input().strip()
+    parts = line.split()
+    country = parts[0]
+    name = parts[1]
+    surname = parts[2]
+    jumps = parts[3:]
+
+    # Проверяем и добавляем участников
+    valid_jumps = Result.check_participants(jumps)
+    if valid_jumps:
+        table.add_participant(country, name, surname, valid_jumps)
+
+# Сортируем таблицу
+Result.filter_participants(table.participants)
+
+# Выводим участников
+n = int(input())
+top_table = Result.get_top(table.participants, n)
+if top_table == 'No results.':
+    print(top_table)
+else:
+    print(len(top_table))
+    for ind, top in enumerate(top_table, start=1):
+        print(f'{ind})', *top)
