@@ -1,6 +1,8 @@
 """ Решение задач. Тема 6. ООП """
 
+
 """ Задачи на анализ """
+
 # Задача 1
 '''
 1. Класс books:
@@ -62,8 +64,8 @@
 Нахождение информации о статистике из json файла;
 '''
 
-""" Задачи на реализацию """
 
+""" Задачи на реализацию """
 
 # Задание 1
 '''
@@ -266,6 +268,7 @@ for a in answer:
 '''
 
 # Задание 4
+'''
 # Прыжки в длину
 # Изменение в задаче: последняя строка - вывод топа произвольного размера спортсменов
 # Класс для вывода результата
@@ -274,12 +277,14 @@ class Result:
     def check_participants(jumps):
         # Преобразуем прыжки в список, игнорируя "x"
         valid_jumps = [float(jump) for jump in jumps if jump != 'x']
-        return valid_jumps if valid_jumps else None
+
+        if valid_jumps:
+            return valid_jumps
+
 
     @staticmethod
     def filter_participants(participants):
-        # Сортируем участников по их лучшим прыжкам
-        participants.sort(key=lambda p: sorted(p[3], reverse=True), reverse=True)
+        return participants.sort(key=lambda p: sorted(p[3], reverse=True), reverse=True)
 
     @staticmethod
     def get_top(participants, number):
@@ -290,6 +295,7 @@ class Result:
             for i in range(min(number, len(participants))):
                 country, name, surname, jumps = participants[i]
                 top.append([country, name, surname, max(jumps)])
+
             return top
 
 
@@ -328,6 +334,6 @@ top_table = Result.get_top(table.participants, n)
 if top_table == 'No results.':
     print(top_table)
 else:
-    print(len(top_table))
     for ind, top in enumerate(top_table, start=1):
         print(f'{ind})', *top)
+'''
