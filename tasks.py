@@ -274,14 +274,12 @@ class Result:
     def check_participants(jumps):
         # Преобразуем прыжки в список, игнорируя "x"
         valid_jumps = [float(jump) for jump in jumps if jump != 'x']
-
-        if valid_jumps:
-            return valid_jumps
-
+        return valid_jumps if valid_jumps else None
 
     @staticmethod
     def filter_participants(participants):
-        return participants.sort(key=lambda p: sorted(p[3], reverse=True), reverse=True)
+        # Сортируем участников по их лучшим прыжкам
+        participants.sort(key=lambda p: sorted(p[3], reverse=True), reverse=True)
 
     @staticmethod
     def get_top(participants, number):
@@ -292,7 +290,6 @@ class Result:
             for i in range(min(number, len(participants))):
                 country, name, surname, jumps = participants[i]
                 top.append([country, name, surname, max(jumps)])
-
             return top
 
 
