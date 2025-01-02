@@ -21,10 +21,24 @@ token = getenv('token')
 Bot = telebot.TeleBot(token, parse_mode=None)
 
 
-# Сделать скролл всех тестов, сделать вывод статистики (/test_statistics ...) и добавление в json файл (Statistics.add_statistics())
+# сделать вывод статистики (/test_statistics ...) и добавление в json файл (Statistics.add_statistics())
+# Сделать поиск топ-5 самых похожих тестов по запросу
 
 
 """ Функции """
+# Функция для показа массива
+def array_for_message(array, omissions='\n', start_ind=0, end=20):
+    if omissions != "index":
+        return omissions.join(map(str, array))
+    else:
+        array = array[start_ind:end]
+        message = ''
+        for ind, obj in enumerate(array, start=start_ind):
+            message += f'{ind+1}) {obj}\n'
+        return message
+
+
+
 # Функция для возвращения json файла
 def show_data():
     # Считываем данные из файла
@@ -144,7 +158,7 @@ class Statistics:
         subject = message[0]
         test_name = message[1]
 
-        # Если дан индекс задачи то ищем название по индексу
+        # Если дан индекс задачи, то ищем название по индексу
         if isinstance(test_name, int):
             test_name = Statistics.find_name(subject, test_name)
 
@@ -218,17 +232,54 @@ def help_for_user(message):
     Bot.send_message(message.chat.id, 'Правила ввода ответов:\nПоявиться позже...')
 
 
+
 # Вывод возможных тестов
+user_test_indexes = {} # Хранение индекса на котором остановился человек
 @Bot.message_handler(commands=['tests'])
-def subject(message):
+def show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
     user_message = check_message(message, 2)
 
+    # Сохраняем человека, для продолжения просмотра тестов
+    if message.chat.id not in user_test_indexes.keys():
+        user_test_indexes[message.chat.id] = [0, user_message]
+
     # Получение результата в зависимости от ответа
-    Bot.send_message(message.chat.id, Statistics.get_tests(user_message))
+    user_answer = Statistics.get_tests(user_message)
+    if len(user_answer) >= 20:
+        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index") + "\nНапишите /next для вывода тестов дальше.")
+    else:
+        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"))
+
+# Функция для продолжения просмотра тестов
+@Bot.message_handler(commands=['next'])
+def next_tests(message):
+    # Убираем факторы, которые могу быть причиной неизвестного сообщения
+    user_message = check_message(message, 1)
+
+    # Сохраняем и добавляем просмотр к человеку
+    if message.chat.id not in user_test_indexes.keys():
+        Bot.send_message(message.chat.id, "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
+        return
+    else:
+        user_test_indexes[message.chat.id][0] += 20
+
+    # Выводим человеку тесты
+
+    user_answer = Statistics.get_tests(user_test_indexes[message.chat.id][1])
+    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0], end=user_test_indexes[message.chat.id][0] + 20)
 
 
-# Вывод статистики
+    if len(user_answer.split())//2 >= 20:
+        Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.")
+    elif 0 < len(user_answer.split())//2 < 20:
+        Bot.send_message(message.chat.id, user_answer)
+    else:
+        Bot.send_message(message.chat.id, "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.")
+        del user_test_indexes[message.chat.id]
+
+
+        # Вывод статистики
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
@@ -240,6 +291,9 @@ def show_statistics(message):
 # testik
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
+    Bot.send_message(message.chat.id, array_for_message([1, 2, 3, 'hi']))
+
+    """
     #statistics[message.from_user.id] = message.text[9:] if message.text[8] == ' '  else message.text[8:]
     print(message, message.from_user.id, message.text)
 
@@ -247,109 +301,8 @@ def nothing(message):
         return
 
     Bot.register_next_step_handler(message, nothing)
+    """
 
 
 """ Запуск бота """
 Bot.infinity_polling()
-
-
-
-
-
-
-
-
-
-'''
-import telebot
-from dotenv import load_dotenv
-import requests
-from os import getenv
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
-
-load_dotenv()
-
-TOKEN = getenv('TOKEN')
-bot = telebot.TeleBot(TOKEN, parse_mode='MarkdownV2')
-
-add_data = {}
-
-
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    reply = r'Hi\! This bot will help you to manage your Nintendo Switch games library\. You can:
-
-• Add your games with purchase price\.
-• Get some useful information from eShop\.
-• Find buddies with same games\.
-
-Detailed instructions are available via /help command\. Enjoy\!'
-
-    bot.reply_to(message, reply)
-
-
-@bot.message_handler(commands=['help'])
-def send_help(message):
-    reply = r'Available commands:
-
-• /add new game to your library\. We will ask you some questions about your new game\.
-• /find game information from eShop by its name or code \(you can find this code on cartridge\)\.
-• /list your games with information\.'
-
-    bot.reply_to(message, reply)
-
-
-@bot.message_handler(commands=['add'])
-def add_game_init(message):
-    bot.send_message(message.chat.id, 'Send me *game name*')
-    bot.register_next_step_handler(message, add_game_name)
-
-
-def add_game_name(message):
-    global add_data
-    add_data[message.chat.id] = [message.text]
-    bot.reply_to(message, 'Perfect, now send me purchase price in dollars, for example *59\.99*')
-    bot.register_next_step_handler(message, add_game_price)
-
-
-def add_game_price(message):
-    global add_data
-    add_data[message.chat.id].append(float(message.text))
-    bot.reply_to(message, 'Nice, now check your info')
-    info_reply = f'{add_data[message.chat.id][0]}: {add_data[message.chat.id][1]}'.replace('.', r'\.')
-    print(info_reply)
-
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton('Yes', callback_data='yes'),
-        InlineKeyboardButton('No', callback_data='no')
-    )
-
-    bot.reply_to(message, info_reply, reply_markup=markup)
-
-
-@bot.callback_query_handler(func=lambda call: True)
-def callback_query(call):
-    if call.data == 'yes':
-        bot.answer_callback_query(call.id, 'Answer is Yes')
-        bot.send_message(call.message.chat.id, 'Successfully added\!')
-    elif call.data == 'no':
-        bot.answer_callback_query(call.id, 'Answer is No')
-        add_game_init(call.message)
-
-
-@bot.message_handler(commands=['games'])
-def send_games(message):
-    url = 'https://search.nintendo-europe.com/en/select?fq=type%3AGAME+AND+system_type%3Anintendoswitch*+AND+product_code_txt%3A*&q=*&sort=change_date+desc&start=0&wt=json&rows=10'
-    data = requests.get(url).json()
-    response = '\n'.join([game['title'] for game in data['response']['docs']])
-    bot.send_message(message.chat.id, response)
-
-
-@bot.message_handler(func=lambda m: True)
-def echo_all(message):
-    bot.reply_to(message, 'Cannot proceed this message, try again')
-
-
-bot.infinity_polling()
-'''
