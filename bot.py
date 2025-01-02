@@ -13,13 +13,6 @@ import base64 # Библиотека для создания hash
 import re
 
 
-
-
-
-# Исправить статистику, переделать проверку ввода пользователя и переделать то что было уже по неё, исправить имеющиеся баги , разобраться с хэшами и написать функции связанные с этой библиотекой.
-
-
-
 """ Подгрузка токена бота и его создание """
 load_dotenv()
 token = getenv('token')
@@ -28,10 +21,20 @@ token = getenv('token')
 Bot = telebot.TeleBot(token, parse_mode=None)
 
 
+# Сделать скролл всех тестов, сделать вывод статистики (/test_statistics ...) и добавление в json файл (Statistics.add_statistics())
+
+
 """ Функции """
+# Функция для возвращения json файла
+def show_data():
+    # Считываем данные из файла
+    with open('files\\data.json', 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+
 # Функция проверки и исправление ввода
 def check_message(command, n):
-    # Убираем часты ошибки в сообщениях (точки и регистр)
+    # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     user_object = user_object.replace('.', '')
     user_object = user_object.lower()
@@ -87,24 +90,33 @@ def decoder(b64):
 
 
 """ Классы """
-# Переменные и массивы нужные для классов
-tests_name_math = ('Полные квадратные уравнения', )
-tests_name_phys = ('', )
-statistics = {}
-
-
 # Класс для тестов по математике
 class Tests:
     def __init__(self):
         pass
 
     # Функция для тестов по математике
-    def Math(self):
+    def math(self, name):
         pass
 
     # Функция для тестов по физике
-    def Physics(self):
+    def physics(self, name):
         pass
+
+
+
+
+
+class Math:
+    def __init__(self):
+        self.name = ''
+        self.answers = []
+
+    def start_test(self, name):
+        self.name = name
+
+
+
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
@@ -114,41 +126,53 @@ class User_formulas:
 
 # Класс выводящий разную статистику и информацию из json файлов
 class Statistics:
-    def get_statistics(self, message):
-        # Убираем факторы, которые могут быть причиной неизвестного сообщения
-        message1 = check_message(message, 3)
+    @staticmethod
+    def get_tests(message):
+        data = show_data()
 
-        # Извлекаем предмет и название теста
-        subject = message1[0]
-        test_name = message1[1]
-
-
-        """
-        # Вывод статистики по предмету
-        # Математика
-        if subject in ('math', 'математика'):
-            found = False
-            for obj, ind in enumerate(tests_name_math):
-                if test_name == ind:
-                    found = True
-                    return f'Ваша статистика на тест {ind} (номер {obj + 1}): {statistics.get(str(message.from_user.id), "Нету статистики")}'
-            if not found:
-                Bot.send_message(message.chat.id, 'Тест с таким именем не найден.')
-
-        # Физика
-        elif subject in ('phys', 'физика', 'physics'):
-            found = False
-            for obj, ind in enumerate(tests_name_phys):
-                if test_name == ind:
-                    found = True
-                    return f'Ваша статистика на тест {ind} (номер {obj + 1}): {statistics.get(str(message.from_user.id), "Нету статистики")}'
-            if not found:
-                return 'Тест с таким именем не найден.'
-
-        # Неправильный ввод
+        # Показываем варианты по названию
+        if message[0] in ('math', 'математика'):
+            return data["math"]
+        elif message[0] in ('physics', 'физика', 'phys'):
+            return data["physics"]
         else:
-            return 'Неизвестное сообщение или неправильный ввод.'
-        """
+            return "Неизвестное сообщение или неправильный ввод."
+
+    @staticmethod
+    def get_statistics(message, id):
+        # Извлекаем предмет и название теста
+        subject = message[0]
+        test_name = message[1]
+
+        # Если дан индекс задачи то ищем название по индексу
+        if isinstance(test_name, int):
+            test_name = Statistics.find_name(subject, test_name)
+
+        # Выводим статистику
+        data = show_data()
+        if not test_name:
+            return "Неизвестное сообщение или неправильный ввод."
+        elif subject not in ('math', 'математика', 'physics', 'физика', 'phys'):
+            return "Неизвестное сообщение или неправильный ввод."
+        else:
+            # Получаем статистику
+            result = data.get(id, {}).get(subject, {}).get(test_name)
+            if result is not None:
+                return result
+            else:
+                return "Неизвестное сообщение или неправильный ввод."
+
+    @staticmethod
+    def find_name(subject, index):
+        data = show_data()
+
+        # Возвращаем название теста по индексу
+        if subject in ('math', 'математика'):
+            if 0 <= index < len(data["math"]):
+                return data["math"][index]
+        elif subject in ('physics', 'физика', 'phys'):
+            if 0 <= index < len(data["physics"]):
+                return data["physics"][index]
 
 
 """ Команды бота и ответы на них """
@@ -196,40 +220,28 @@ def help_for_user(message):
 
 # Вывод возможных тестов
 @Bot.message_handler(commands=['tests'])
-def math_or_phys(object0):
+def subject(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_object = check_message(object0, 2)
+    user_message = check_message(message, 2)
 
-    # Вывод результата в зависимости от ответа
-    if user_object[0] in ('math', 'математика'):
-        math_tests(object0)
-    elif user_object[0] in ('physics', 'физика', 'phys'):
-        phys_tests(object0)
-    else:
-        Bot.send_message(object0.chat.id, 'Неизвестное сообщение или неправильный ввод.')
-
-# Вывод тестов по математике
-def math_tests(object0):
-    for ind, test in enumerate(tests_name_math):
-        Bot.send_message(object0.chat.id, str(ind+1) + '. ' + test)
-
-# Вывод тестов по физике
-def phys_tests(object0):
-    for ind, test in enumerate(tests_name_phys):
-        Bot.send_message(object0.chat.id, str(ind+1) + '. ' + test)
+    # Получение результата в зависимости от ответа
+    Bot.send_message(message.chat.id, Statistics.get_tests(user_message))
 
 
 # Вывод статистики
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
-    Bot.send_message(message.chat.id, Statistics.get_statistics(message))
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 3)
+
+    #Bot.send_message(message.chat.id, Statistics.get_statistics(message))
 
 
 # testik
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
     #statistics[message.from_user.id] = message.text[9:] if message.text[8] == ' '  else message.text[8:]
-    print(statistics, message.from_user.id, message.text)
+    print(message, message.from_user.id, message.text)
 
     if message.text == 'aboba':
         return
