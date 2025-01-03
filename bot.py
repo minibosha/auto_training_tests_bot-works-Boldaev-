@@ -7,10 +7,11 @@ from os import getenv
 import math
 
 import json
-import requests
 
 import base64 # Библиотека для создания hash
 import re
+
+import difflib
 
 
 """ Подгрузка токена бота и его создание """
@@ -21,11 +22,30 @@ token = getenv('token')
 Bot = telebot.TeleBot(token, parse_mode=None)
 
 
-# сделать вывод статистики (/test_statistics ...) и добавление в json файл (Statistics.add_statistics())
-# Сделать поиск топ-5 самых похожих тестов по запросу
-
-
 """ Функции """
+# Нахождение топ-5 самых похожих слов по запросу
+def find_similar_words(subject, input_word):
+    # Загружаем названия тестов
+    data = show_data()
+
+    # Проверка, что правильно введён предмет
+    if subject in ('math', 'математика', 'physics', 'физика', 'phys'):
+        # Преобразуем предмет для его вывода
+        if subject in ('math', 'математика'):
+            subject = "math"
+        elif subject in ('physics', 'физика', 'phys'):
+            subject = "physics"
+
+        # Находим массив тестов
+        word_list = data[subject]
+    else:
+        "Неизвестное сообщение или неправильный ввод."
+
+    # Используем SequenceMatcher для нахождения похожих слов
+    similar_words = difflib.get_close_matches(input_word, word_list, n=5, cutoff=0.0)
+    return similar_words
+
+
 # Функция для показа массива
 def array_for_message(array, omissions='\n', start_ind=0, end=20):
     if omissions != "index":
@@ -153,14 +173,14 @@ class Statistics:
             return "Неизвестное сообщение или неправильный ввод."
 
     @staticmethod
-    def get_statistics(message, id):
+    def get_statistics(message, user_id):
         # Извлекаем предмет и название теста
         subject = message[0]
-        test_name = message[1]
+        test_name = message[1].replace(' ', '')
 
         # Если дан индекс задачи, то ищем название по индексу
-        if isinstance(test_name, int):
-            test_name = Statistics.find_name(subject, test_name)
+        if test_name.isdigit():
+            test_name = Statistics.find_name(subject, int(test_name))
 
         # Выводим статистику
         data = show_data()
@@ -169,16 +189,23 @@ class Statistics:
         elif subject not in ('math', 'математика', 'physics', 'физика', 'phys'):
             return "Неизвестное сообщение или неправильный ввод."
         else:
+            # Преобразуем предмет для его вывода
+            if subject in ('math', 'математика'):
+                subject = "math"
+            elif subject in ('physics', 'физика', 'phys'):
+                subject = "physics"
+
             # Получаем статистику
-            result = data.get(id, {}).get(subject, {}).get(test_name)
+            result = data.get("id", {}).get(subject, {}).get(test_name)
             if result is not None:
                 return result
             else:
-                return "Неизвестное сообщение или неправильный ввод."
+                return "Вашей статистики на этот тест нет."
 
     @staticmethod
     def find_name(subject, index):
         data = show_data()
+        index -= 1
 
         # Возвращаем название теста по индексу
         if subject in ('math', 'математика'):
@@ -187,6 +214,50 @@ class Statistics:
         elif subject in ('physics', 'физика', 'phys'):
             if 0 <= index < len(data["physics"]):
                 return data["physics"][index]
+
+    @staticmethod
+    def add_statistics(point, subject, user_id, name):
+        data = show_data()
+
+        # Добавляем начальные данные для человека
+        if data.get(user_id, {}).get(subject, {}).get(name) is None:
+            if len(data[user_id][subject][name]) > 100:
+                data[user_id][subject][name] = []
+            data[user_id][subject][name] = []
+
+        # Добавляем балл на тест
+        data[user_id][subject][name].append(point)
+
+    @staticmethod
+    def add_statistics(point, subject, user_id, name):
+        data = show_data()
+
+        # Инициализируем структуру данных, если она не существует
+        if user_id not in data:
+            data[user_id] = {}
+        if subject not in data[user_id]:
+            data[user_id][subject] = {}
+        if name not in data[user_id][subject]:
+            data[user_id][subject][name] = []
+
+        # Если длина списка больше или равна 100, очищаем его
+        if len(data[user_id][subject][name]) >= 100:
+            data[user_id][subject][name] = []
+
+        # Добавляем балл на тест
+        data[user_id][subject][name].append(point)
+
+        # Если больше 100 прохождений теста (возможно спам), то обновляем результаты теста
+        if len(data[user_id][subject][name]) > 100:
+            data[user_id][subject][name] = []
+
+        # Добавляем балл на тест
+        data[user_id][subject][name].append(point)
+
+        # Сохраняем изменения обратно в файл
+
+        with open('files\\data.json', 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
 
 
 """ Команды бота и ответы на них """
@@ -285,7 +356,36 @@ def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 3)
 
-    #Bot.send_message(message.chat.id, Statistics.get_statistics(message))
+    # Получаем статистику
+    statistics = Statistics.get_statistics(message_text, message.chat.id)
+
+    # Проверка, что мы получили массив статистики, и преобразуем его в понятную информацию
+    if not isinstance(statistics, str):
+        answer = [0, 0, 0, 0, 0]
+        answer[0] = f"Количество попыток - {len(statistics)}"
+        answer[1] = f"Средний балл - {sum(statistics)/len(statistics)}"
+        answer[2] = f"Лучший балл - {max(statistics)}"
+        answer[3] = f"Баллы на первой попытке - {statistics[0]}"
+        answer[4] = f"Баллы на последней попытке - {statistics[-1]}"
+
+        statistics = array_for_message(answer)
+
+    Bot.send_message(message.chat.id, statistics)
+
+
+@Bot.message_handler(commands=['find'])
+def find_similar(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 3)
+
+    # Находим топ-5 похожих слов
+    similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
+
+    # Проверка, что мы получили массив слов
+    if not isinstance(similar, str):
+        similar = array_for_message(similar)
+
+    Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar)
 
 
 # testik
