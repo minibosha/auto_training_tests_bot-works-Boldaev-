@@ -8,11 +8,10 @@ import math
 
 import json
 
-import base64 # Библиотека для создания hash
+import base64  # Библиотека для создания hash
 import re
 
 import difflib
-
 
 """ Подгрузка токена бота и его создание """
 load_dotenv()
@@ -21,8 +20,9 @@ token = getenv('token')
 # Создание бота
 Bot = telebot.TeleBot(token, parse_mode=None)
 
-
 """ Функции """
+
+
 # Нахождение топ-5 самых похожих слов по запросу
 def find_similar_words(subject, input_word):
     # Загружаем названия тестов
@@ -54,9 +54,8 @@ def array_for_message(array, omissions='\n', start_ind=0, end=20):
         array = array[start_ind:end]
         message = ''
         for ind, obj in enumerate(array, start=start_ind):
-            message += f'{ind+1}) {obj}\n'
+            message += f'{ind + 1}) {obj}\n'
         return message
-
 
 
 # Функция для возвращения json файла
@@ -124,6 +123,8 @@ def decoder(b64):
 
 
 """ Классы """
+
+
 # Класс для тестов по математике
 class Tests:
     def __init__(self):
@@ -138,9 +139,6 @@ class Tests:
         pass
 
 
-
-
-
 class Math:
     def __init__(self):
         self.name = ''
@@ -148,9 +146,6 @@ class Math:
 
     def start_test(self, name):
         self.name = name
-
-
-
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
@@ -261,10 +256,13 @@ class Statistics:
 
 
 """ Команды бота и ответы на них """
+
+
 # Вывод при команде старт
 @Bot.message_handler(commands=['start'])
 def start(message):
-    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
+    Bot.send_message(message.chat.id,
+                     'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
 
 
 # Вывод информации для помощи пользователю
@@ -275,10 +273,14 @@ def help_for_user(message):
         ['Команда', 'Что делает команда.', 'Параметры (если есть).'],
         ['/start', 'Выдаёт краткое описание бота и предметы по которым можно выбрать тест.', '-'],
         ['/help', 'Выдаёт список всех команд чат-бота и как правильно вводить ответы на задачу.', '-'],
-        ['/tests object', 'просмотр тем тестов.', 'object - Выбор предмета из возможных (math, математика; physics, физика, phys)'],
+        ['/tests object', 'просмотр тем тестов.',
+         'object - Выбор предмета из возможных (math, математика; physics, физика, phys)'],
         ['/start_test name object', 'начать решение теста.', 'name - Название теста или его номер.'],
-        ['/test_statistics name', 'выводит статистику теста (Количество попыток, лучший балл, баллы на первой попытке, баллы на последней попытке).', 'name - Название теста или его номер; object - Выбор предмета из возможных (math, математика; physics, физика, phys).'],
-        ['/answer task answer или */an* task answer',  'Дать ответ после начала решения.', 'task - Номер задачи в тесте; answer - ответ на задачу (правила записи ответа выводятся при вводе команды /help).'],
+        ['/test_statistics name',
+         'выводит статистику теста (Количество попыток, лучший балл, баллы на первой попытке, баллы на последней попытке).',
+         'name - Название теста или его номер; object - Выбор предмета из возможных (math, математика; physics, физика, phys).'],
+        ['/answer task answer или */an* task answer', 'Дать ответ после начала решения.',
+         'task - Номер задачи в тесте; answer - ответ на задачу (правила записи ответа выводятся при вводе команды /help).'],
         ['/end', 'заканчивает тест', '-', ]]
 
     table_str = ""
@@ -295,7 +297,8 @@ def help_for_user(message):
         table_str += '\n\n'
         change = True
 
-    Bot.send_message(message.chat.id,'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
+    Bot.send_message(message.chat.id,
+                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
 
     Bot.send_message(message.chat.id, 'Команды:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
@@ -303,9 +306,10 @@ def help_for_user(message):
     Bot.send_message(message.chat.id, 'Правила ввода ответов:\nПоявиться позже...')
 
 
-
 # Вывод возможных тестов
-user_test_indexes = {} # Хранение индекса на котором остановился человек
+user_test_indexes = {}  # Хранение индекса на котором остановился человек
+
+
 @Bot.message_handler(commands=['tests'])
 def show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
@@ -318,9 +322,11 @@ def show_tests(message):
     # Получение результата в зависимости от ответа
     user_answer = Statistics.get_tests(user_message)
     if len(user_answer) >= 20:
-        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index") + "\nНапишите /next для вывода тестов дальше.")
+        Bot.send_message(message.chat.id, array_for_message(user_answer,
+                                                            omissions="index") + "\nНапишите /next для вывода тестов дальше.")
     else:
         Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"))
+
 
 # Функция для продолжения просмотра тестов
 @Bot.message_handler(commands=['next'])
@@ -330,7 +336,8 @@ def next_tests(message):
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id, "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
+        Bot.send_message(message.chat.id,
+                         "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
@@ -338,19 +345,21 @@ def next_tests(message):
     # Выводим человеку тесты
 
     user_answer = Statistics.get_tests(user_test_indexes[message.chat.id][1])
-    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0], end=user_test_indexes[message.chat.id][0] + 20)
+    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0],
+                                    end=user_test_indexes[message.chat.id][0] + 20)
 
-
-    if len(user_answer.split())//2 >= 20:
+    if len(user_answer.split()) // 2 >= 20:
         Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.")
-    elif 0 < len(user_answer.split())//2 < 20:
+    elif 0 < len(user_answer.split()) // 2 < 20:
         Bot.send_message(message.chat.id, user_answer)
     else:
-        Bot.send_message(message.chat.id, "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.")
+        Bot.send_message(message.chat.id,
+                         "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.")
         del user_test_indexes[message.chat.id]
 
-
         # Вывод статистики
+
+
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
@@ -363,7 +372,7 @@ def show_statistics(message):
     if not isinstance(statistics, str):
         answer = [0, 0, 0, 0, 0]
         answer[0] = f"Количество попыток - {len(statistics)}"
-        answer[1] = f"Средний балл - {sum(statistics)/len(statistics)}"
+        answer[1] = f"Средний балл - {sum(statistics) / len(statistics)}"
         answer[2] = f"Лучший балл - {max(statistics)}"
         answer[3] = f"Баллы на первой попытке - {statistics[0]}"
         answer[4] = f"Баллы на последней попытке - {statistics[-1]}"
