@@ -37,13 +37,24 @@ class Text:
     def get_word_from_string(self, index, word):
         return self._block[index].split()[word]
 
+    @property
+    def block(self):
+        return self._block
+
+
 class EditableText(Text):
     def change_string(self, index, new_string):
         self._block[index] = new_string
         return self._block[index]
 
     def change_word_in_string(self, index, word, new_word):
-        self._block[index].split()[word] = new_word
+        # Создаём изменённую строку в тексте
+        changed_string = self._block[index].split()
+        changed_string[word] = new_word
+
+        # Меняем строку в тексте
+        self._block[index] = ' '.join(changed_string)
+
         return self._block[index]
 
     def find_word_in_text(self, word):
@@ -55,13 +66,13 @@ class EditableText(Text):
 
             # Добавляем найденные индексы вхождений слова в строку, если есть
             if indices:
-                found += f'Номера вхождения в {ind-1} строке: {indices}'
+                found += f'Номера вхождения в {ind-1} строке: {indices}\n'
 
         # Проверяем что есть хотя-бы одно слово
         if found:
             return found
         else:
-            return "Нету слов в тексте"
+            return "Нету такого слова в тексте"
 
     def __repr__(self):
         return '\n'.join(self._block)
@@ -69,7 +80,7 @@ class EditableText(Text):
 
 # Проверяем функции класса Text
 txt = Text('Hello World!\nNo answer\nIm alone there?')
-print(txt._block)
+print(txt.block)
 print(txt.count_strings())
 print(txt.get_string(1))
 print(txt.count_words_in_string(1))
@@ -80,7 +91,6 @@ print(txt.get_word_from_string(1, 1))
 ed_txt = EditableText('Hello World!\nNo answer\nIm alone there?')
 print()
 print(ed_txt.change_string(1, "No, you're not"))
-print(ed_txt.change_word_in_string(2, 2, 'not alone')) # Неправильно работает, завтра исправлю ;)
+print(ed_txt.change_word_in_string(2, 1, 'not alone'))
 print(ed_txt.find_word_in_text('not'))
-print()
 print(ed_txt)
