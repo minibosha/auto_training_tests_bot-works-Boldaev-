@@ -4,6 +4,9 @@ import telebot
 from dotenv import load_dotenv
 from os import getenv
 
+import random
+from sympy import symbols, Eq, solve, sympify, numer, ratsimp, nroots
+
 import math
 
 import json
@@ -21,8 +24,6 @@ token = getenv('token')
 Bot = telebot.TeleBot(token, parse_mode=None)
 
 """ Функции """
-
-
 # Нахождение топ-5 самых похожих слов по запросу
 def find_similar_words(subject, input_word):
     # Загружаем названия тестов
@@ -123,8 +124,6 @@ def decoder(b64):
 
 
 """ Классы """
-
-
 # Класс для тестов по математике
 class Tests:
     def __init__(self):
@@ -149,8 +148,38 @@ class Math:
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
-class User_formulas:
-    pass
+class UserFormulas:
+    @staticmethod
+    def normal(num):
+        # Регулярное выражение для проверки числа с не более чем 4 цифрами после запятой
+        pattern = r'^\d+(\.\d{1,4})?$'
+        return bool(re.match(pattern, str(num)))
+
+    @staticmethod
+    def equation_solver(equation, ranges, normal_check=False):
+        # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
+        for _ in range(1000000):
+
+            # Создаём рандомные числа
+            numbers = {}
+            for ind, obj in enumerate(ranges.keys()):
+                numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
+
+            # Заранее определяем массив переменных
+            symbols_list = list(numbers.keys())  # Преобразуем в список
+
+            # Создаем символы из списка
+            variables = {var: symbols(var) for var in symbols_list}
+
+            expr = sympify(equation.strip())
+            values = {variables[var]: value for var, value in numbers.items() if var in variables}
+            result = expr.subs(values)
+
+            if normal_check:
+                if UserFormulas.normal(float(result)):
+                    return float(result), numbers
+            else:
+                return float(result), numbers
 
 
 # Класс выводящий разную статистику и информацию из json файлов
@@ -214,19 +243,6 @@ class Statistics:
     def add_statistics(point, subject, user_id, name):
         data = show_data()
 
-        # Добавляем начальные данные для человека
-        if data.get(user_id, {}).get(subject, {}).get(name) is None:
-            if len(data[user_id][subject][name]) > 100:
-                data[user_id][subject][name] = []
-            data[user_id][subject][name] = []
-
-        # Добавляем балл на тест
-        data[user_id][subject][name].append(point)
-
-    @staticmethod
-    def add_statistics(point, subject, user_id, name):
-        data = show_data()
-
         # Инициализируем структуру данных, если она не существует
         if user_id not in data:
             data[user_id] = {}
@@ -250,7 +266,6 @@ class Statistics:
         data[user_id][subject][name].append(point)
 
         # Сохраняем изменения обратно в файл
-
         with open('files\\data.json', 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
@@ -414,4 +429,7 @@ def nothing(message):
 
 
 """ Запуск бота """
-Bot.infinity_polling()
+try:
+    Bot.infinity_polling()
+except KeyboardInterrupt:
+    print('The program is stopped...')

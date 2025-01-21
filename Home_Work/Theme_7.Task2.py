@@ -1,8 +1,8 @@
 """ Задание 2. Тема 7: Принципы ООП """
 
-
 # Скачиваем библиотеку для вычислений
 import math
+
 
 # Создаём класс вектора
 class Vector:
@@ -89,6 +89,7 @@ class Car(Vehicle):
             self.fuel -= required_fuel
 
         return self.route
+
 
 # Пример использования класса Vehicle
 v1 = Vehicle([0, 1])

@@ -4,6 +4,7 @@
 # Скачиваем библиотеку для вычислений
 import math
 
+
 # Создаём класс для точки
 class Point:
     def __init__(self, point):
@@ -14,6 +15,7 @@ class Point:
 
     def find_distance(self, other_point):
         return math.sqrt((self.point[0] - other_point.point[0]) ** 2 + (self.point[1] - other_point.point[1]) ** 2)
+
 
 # Создаём класс для создания круга
 class Circle:
@@ -32,7 +34,9 @@ class Circle:
 
     def has_common_points(self, other):
         distance_between_centers = self.center.find_distance(other.center)
-        return distance_between_centers <= (self.radius + other.radius) and distance_between_centers >= abs(self.radius - other.radius)
+        return distance_between_centers <= (self.radius + other.radius) and distance_between_centers >= abs(
+            self.radius - other.radius)
+
 
 # Задание 3
 # Сотовые связь в большом городе

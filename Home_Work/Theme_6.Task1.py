@@ -1,5 +1,6 @@
 """ Задачи на реализацию """
 
+
 # Задание 1
 # Класс гонщиков
 class Driver:
@@ -17,14 +18,14 @@ class Driver:
 
 # Ввод данных
 n, m = map(int, input().split())
-driver_instance = Driver()  # Создаем экземпляр класса Driver
+driver_instance = Driver()
 
 # Вводим имена и сохраняем их
 for _ in range(n):
     name = input()
     circle_times = list(map(int, input().split()))
 
-    driver_instance.add_driver(name, circle_times)  # Добавляем гонщика
+    driver_instance.add_driver(name, circle_times)
 
 # Сортируем гонщиков и выводим результат
 sorted_drivers = driver_instance.sort_drivers()

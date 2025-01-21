@@ -1,5 +1,6 @@
 """ Задачи на реализацию """
 
+
 # Задание 4
 # Прыжки в длину
 # Изменение в задаче: последняя строка - вывод топа произвольного размера спортсменов
@@ -12,7 +13,6 @@ class Result:
 
         if valid_jumps:
             return valid_jumps
-
 
     @staticmethod
     def filter_participants(participants):

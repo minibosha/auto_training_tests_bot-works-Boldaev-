@@ -3,7 +3,7 @@ import re
 
 
 class Text:
-    def __init__(self, string : str):
+    def __init__(self, string: str):
         self._block = []
 
         # Находим вхождений всех переходов в строку, чтобы определить что это новая строка в блоке
@@ -66,7 +66,7 @@ class EditableText(Text):
 
             # Добавляем найденные индексы вхождений слова в строку, если есть
             if indices:
-                found += f'Номера вхождения в {ind-1} строке: {indices}\n'
+                found += f'Номера вхождения в {ind - 1} строке: {indices}\n'
 
         # Проверяем что есть хотя-бы одно слово
         if found:
@@ -85,7 +85,6 @@ print(txt.count_strings())
 print(txt.get_string(1))
 print(txt.count_words_in_string(1))
 print(txt.get_word_from_string(1, 1))
-
 
 # Проверяем функции класса EditableText
 ed_txt = EditableText('Hello World!\nNo answer\nIm alone there?')

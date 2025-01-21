@@ -1,8 +1,8 @@
 """ Задание 1. Тема 7: Принципы ООП """
 
-
 # Скачиваем библиотеку для вычислений
 import math
+
 
 # Создаём класс для точки
 class Point:
@@ -17,6 +17,7 @@ class Point:
 
     def __repr__(self):
         return str(self.point)
+
 
 # Создаём класс вектора
 class Vector(Point):
