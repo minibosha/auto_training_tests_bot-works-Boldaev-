@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from os import getenv
 
 import random
-from sympy import symbols, Eq, solve, sympify, numer, ratsimp, nroots
+from sympy import symbols, sympify
 
 import math
 
@@ -150,18 +150,28 @@ class Math:
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
     @staticmethod
-    def normal(num):
+    def normal(nums):
         # Регулярное выражение для проверки числа с не более чем 4 цифрами после запятой
         pattern = r'^\d+(\.\d{1,4})?$'
-        return bool(re.match(pattern, str(num)))
+
+        # Проверяем все числа на нормальность
+        res = []
+        for num in nums:
+            res.append(bool(re.match(pattern, str(num))))
+
+        # Выводим ответ после проверки всех чисел
+        return all(res)
 
     @staticmethod
-    def equation_solver(equation, ranges, normal_check=False):
+    def equation_solver(equations, ranges, normal_check=False):
+        # Создание нужных ячеек памяти
+        results = []
+        numbers = {}
+
         # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
-        for _ in range(1000000):
+        for n in range(1000000):
 
             # Создаём рандомные числа
-            numbers = {}
             for ind, obj in enumerate(ranges.keys()):
                 numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
 
@@ -171,15 +181,26 @@ class UserFormulas:
             # Создаем символы из списка
             variables = {var: symbols(var) for var in symbols_list}
 
-            expr = sympify(equation.strip())
-            values = {variables[var]: value for var, value in numbers.items() if var in variables}
-            result = expr.subs(values)
+            # Проверяем числа на уравнениях
+            for equation in equations:
+                # Создаём уравнение
+                expr = sympify(equation.strip())
 
+                # Назначаем переменной значение
+                values = {variables[var]: value for var, value in numbers.items() if var in variables}
+
+                # Вычисляем результат
+                results.append(float(expr.subs(values)))
+
+            # Проверяем что числа в нужном диапазоне (до 4 знаков после запятой).
             if normal_check:
-                if UserFormulas.normal(float(result)):
-                    return float(result), numbers
+                if UserFormulas.normal(results):
+                    return results, numbers
             else:
-                return float(result), numbers
+                return results, numbers
+
+            # Удаляем результаты
+            results = []
 
 
 # Класс выводящий разную статистику и информацию из json файлов
