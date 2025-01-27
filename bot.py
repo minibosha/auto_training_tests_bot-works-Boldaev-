@@ -125,19 +125,6 @@ def decoder(b64):
 
 """ Классы """
 # Класс для тестов по математике
-class Tests:
-    def __init__(self):
-        pass
-
-    # Функция для тестов по математике
-    def math(self, name):
-        pass
-
-    # Функция для тестов по физике
-    def physics(self, name):
-        pass
-
-
 class Math:
     def __init__(self):
         self.name = ''
@@ -150,26 +137,49 @@ class Math:
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
     @staticmethod
-    def normal(nums):
-        # Регулярное выражение для проверки числа с не более чем 4 цифрами после запятой
-        pattern = r'^\d+(\.\d{1,4})?$'
+    def normal(nums, after_point):
+        # Регулярное выражение для проверки числа с не более чем n цифрами после запятой
+        pattern = r'^\d+(\.\d{1,' + str(after_point) + '})?$'
 
         # Проверяем все числа на нормальность
         res = []
         for num in nums:
+            num = abs(num)
             res.append(bool(re.match(pattern, str(num))))
 
         # Выводим ответ после проверки всех чисел
         return all(res)
 
     @staticmethod
-    def equation_solver(equations, ranges, normal_check=False):
+    # Округление числа до указанного значения
+    def round_nums(nums, digits):
+        res = []
+        for num in nums:
+            res.append(round(num, digits))
+
+        return res
+
+    @staticmethod
+    def equation_solver(eqs, ranges, normal_check=False, after_point=4, round_check=False):
         # Создание нужных ячеек памяти
         results = []
         numbers = {}
 
         # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
-        for n in range(1000000):
+        for _ in range(1000000):
+
+            # Проверяем что нет доп. переменных
+            equations = []  # Массив для уравнений
+            dop_vars = {}  # Массив для добавочных переменных
+
+            for ind, eq in enumerate(eqs):
+                if '=' in eq:
+                    ind_sym = eq.index('=')
+                    if ind_sym:
+                        dop_vars[ind] = eq[ind_sym + 1:]
+                        equations.append(eq[:ind_sym])
+                else:
+                    equations.append(eq)
 
             # Создаём рандомные числа
             for ind, obj in enumerate(ranges.keys()):
@@ -177,30 +187,48 @@ class UserFormulas:
 
             # Заранее определяем массив переменных
             symbols_list = list(numbers.keys())  # Преобразуем в список
+            symbols_list.extend(list(dop_vars.values()))  # Добавляем доп. переменные
 
             # Создаем символы из списка
             variables = {var: symbols(var) for var in symbols_list}
 
             # Проверяем числа на уравнениях
-            for equation in equations:
+            for ind, equation in enumerate(equations):
                 # Создаём уравнение
                 expr = sympify(equation.strip())
 
                 # Назначаем переменной значение
                 values = {variables[var]: value for var, value in numbers.items() if var in variables}
 
-                # Вычисляем результат
-                results.append(float(expr.subs(values)))
+                # Вычисляем результат (Проверка, что число не комплексное)
+                try:
+                    res = float(expr.subs(values))
+                    results.append(res)
 
-            # Проверяем что числа в нужном диапазоне (до 4 знаков после запятой).
+                    # Добавляем доп. переменные
+                    val = dop_vars.get(ind, False)
+                    if val:
+                        numbers[val] = res
+
+                except TypeError:
+                    results.clear()
+                    break
+
+            # Округляем числа если это нужно
+            if round_check:
+                print(results)
+                results = UserFormulas.round_nums(results, after_point)
+
+            # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
             if normal_check:
-                if UserFormulas.normal(results):
-                    return results, numbers
+                if len(results) == len(equations):
+                    if UserFormulas.normal(results, after_point):
+                        return results, numbers
             else:
                 return results, numbers
 
             # Удаляем результаты
-            results = []
+            results.clear()
 
 
 # Класс выводящий разную статистику и информацию из json файлов
