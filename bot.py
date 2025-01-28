@@ -463,20 +463,24 @@ def find_similar(message):
     Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar)
 
 
-# testik
+taps = {}
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
-    Bot.send_message(message.chat.id, array_for_message([1, 2, 3, 'hi']))
+    chat_id = str(message.chat.id)
+    taps_count = taps.get(chat_id, -1)
 
-    """
-    #statistics[message.from_user.id] = message.text[9:] if message.text[8] == ' '  else message.text[8:]
-    print(message, message.from_user.id, message.text)
-
-    if message.text == 'aboba':
-        return
-
-    Bot.register_next_step_handler(message, nothing)
-    """
+    if taps_count == -1:
+        Bot.send_message(message.chat.id, 'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
+        taps[chat_id] = 0  # Инициализируем счетчик тапов
+        Bot.register_next_step_handler(message, nothing)
+    else:
+        if message.text.lower() == 'тап':
+            taps[chat_id] += 1
+            Bot.send_message(message.chat.id, f'Вы тапнули хомяка {taps[chat_id]} раз(а). Продолжайте тапать или напишите что-то другое, чтобы остановиться.')
+            Bot.register_next_step_handler(message, nothing)
+        else:
+            Bot.send_message(message.chat.id, f'Вы закончили игру. Вы тапнули хомяка {taps[chat_id]} раз(а). Напишите /testiki, чтобы начать заново.')
+            del taps[chat_id]  # Удаляем запись о пользователе, чтобы начать заново
 
 
 """ Запуск бота """
