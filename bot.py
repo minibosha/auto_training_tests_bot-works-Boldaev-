@@ -249,9 +249,9 @@ class Statistics:
     def get_statistics(message, user_id):
         # Извлекаем предмет и название теста
         subject = message[0]
-        test_name = message[1].replace(' ', '')
+        test_name = ' '.join(message[1:])
 
-        # Если дан индекс задачи, то ищем название по индексу
+        # Если дан индекс задачи, то ищем название по индексу. Если нет, то переделываем сообщение
         if test_name.isdigit():
             test_name = Statistics.find_name(subject, int(test_name))
 
@@ -269,7 +269,7 @@ class Statistics:
                 subject = "physics"
 
             # Получаем статистику
-            result = data.get("id", {}).get(subject, {}).get(test_name)
+            result = data.get("id", {}).get(subject, {}).get(test_name)   # Удалить "id", заменить на переменную!!!
             if result is not None:
                 return result
             else:
@@ -385,7 +385,9 @@ def show_tests(message):
 
     # Получение результата в зависимости от ответа
     user_answer = Statistics.get_tests(user_message)
-    if len(user_answer) >= 20:
+    if user_answer == 'Неизвестное сообщение или неправильный ввод.':
+        Bot.send_message(message.chat.id, user_answer)
+    elif len(user_answer) >= 20:
         Bot.send_message(message.chat.id, array_for_message(user_answer,
                                                             omissions="index") + "\nНапишите /next для вывода тестов дальше.")
     else:
