@@ -23,7 +23,10 @@ token = getenv('token')
 # Создание бота
 Bot = telebot.TeleBot(token, parse_mode=None)
 
+
 """ Функции """
+
+
 # Нахождение топ-5 самых похожих слов по запросу
 def find_similar_words(subject, input_word):
     # Загружаем названия тестов
@@ -124,18 +127,28 @@ def decoder(b64):
 
 
 """ Классы """
+
+
 # Класс для тестов по математике
 class Math:
     def __init__(self):
-        self.name = ''
-        self.answers = []
+        # Данные пользователя
+        self.user_answers = []
 
+        # Данные для компьютера
+        self.name_test = ''
+        self.answers = []
+        self.equations = []
+        self.solve = []
+
+    # Нахождение и начало теста
     def start_test(self, name):
-        self.name = name
+        self.name_test = name
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
+    # Проверка, что у чисел не больше after_point знаков после запятой
     @staticmethod
     def normal(nums, after_point):
         # Регулярное выражение для проверки числа с не более чем n цифрами после запятой
@@ -150,8 +163,8 @@ class UserFormulas:
         # Выводим ответ после проверки всех чисел
         return all(res)
 
-    @staticmethod
     # Округление числа до указанного значения
+    @staticmethod
     def round_nums(nums, digits):
         res = []
         for num in nums:
@@ -159,6 +172,7 @@ class UserFormulas:
 
         return res
 
+    # Функция для вычисления уравнений
     @staticmethod
     def equation_solver(eqs, ranges, normal_check=False, after_point=4, round_check=False):
         # Создание нужных ячеек памяти
@@ -233,6 +247,7 @@ class UserFormulas:
 
 # Класс выводящий разную статистику и информацию из json файлов
 class Statistics:
+    # Получение всех названий тестов по предмету
     @staticmethod
     def get_tests(message):
         data = show_data()
@@ -245,6 +260,7 @@ class Statistics:
         else:
             return "Неизвестное сообщение или неправильный ввод."
 
+    # Получение статистики человека по его id
     @staticmethod
     def get_statistics(message, user_id):
         # Извлекаем предмет и название теста
@@ -269,12 +285,13 @@ class Statistics:
                 subject = "physics"
 
             # Получаем статистику
-            result = data.get("id", {}).get(subject, {}).get(test_name)   # Удалить "id", заменить на переменную!!!
+            result = data.get("id", {}).get(subject, {}).get(test_name)  # Удалить "id", заменить на переменную!!!
             if result is not None:
                 return result
             else:
                 return "Вашей статистики на этот тест нет."
 
+    # Нахождение имя теста по его индексу и предмету
     @staticmethod
     def find_name(subject, index):
         data = show_data()
@@ -288,6 +305,7 @@ class Statistics:
             if 0 <= index < len(data["physics"]):
                 return data["physics"][index]
 
+    # Добавление статистики
     @staticmethod
     def add_statistics(point, subject, user_id, name):
         data = show_data()
@@ -463,23 +481,50 @@ def find_similar(message):
     Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar)
 
 
+# Функция для начала тестов
+user_tests = {}  # Словарь для сохранения тестов
+
+
+@Bot.message_handler(commands=['start_test'])
+def start_test(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 3)
+
+    # Проверяем что есть такой тест по его названию или индексу
+    if message_text[1].isdigit():
+        test_name = Statistics.find_name(message_text[0], int(message_text[1]))
+        Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'?")
+    else:
+        test_name = ' '.join(message_text[1:])
+        if test_name in Statistics.get_tests(message_text):
+            pass                                                # Доработать!!!
+        else:
+            Bot.send_message(message.chat.id, Statistics.get_tests(message_text[0]))
+
+
+# testiki
 taps = {}
+
+
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
     chat_id = str(message.chat.id)
     taps_count = taps.get(chat_id, -1)
 
     if taps_count == -1:
-        Bot.send_message(message.chat.id, 'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
+        Bot.send_message(message.chat.id,
+                         'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
         taps[chat_id] = 0  # Инициализируем счетчик тапов
         Bot.register_next_step_handler(message, nothing)
     else:
         if message.text.lower() == 'тап':
             taps[chat_id] += 1
-            Bot.send_message(message.chat.id, f'Вы тапнули хомяка {taps[chat_id]} раз(а). Продолжайте тапать или напишите что-то другое, чтобы остановиться.')
+            Bot.send_message(message.chat.id,
+                             f'Вы тапнули хомяка {taps[chat_id]} раз(а). Продолжайте тапать или напишите что-то другое, чтобы остановиться.')
             Bot.register_next_step_handler(message, nothing)
         else:
-            Bot.send_message(message.chat.id, f'Вы закончили игру. Вы тапнули хомяка {taps[chat_id]} раз(а). Напишите /testiki, чтобы начать заново.')
+            Bot.send_message(message.chat.id,
+                             f'Вы закончили игру. Вы тапнули хомяка {taps[chat_id]} раз(а). Напишите /testiki, чтобы начать заново.')
             del taps[chat_id]  # Удаляем запись о пользователе, чтобы начать заново
 
 
