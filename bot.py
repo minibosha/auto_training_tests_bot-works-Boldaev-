@@ -70,19 +70,33 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n):
+def check_message(command, n, user_command=False, strict=False):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     user_object = user_object.replace('.', '')
     user_object = user_object.lower()
 
-    # Проверяем что у нас нужное количество данных
+    # Разграничиваем текст
     txt = user_object.split()
-    if len(txt) < n:
-        return False
+
+    # Проверяем что введённая команда верная
+    if user_command:
+        if user_command != txt[0]:
+            return False
+
+    # Проверяем что у нас нужное количество данных
+    if strict:
+        if len(txt) != n:
+            return False
+    else:
+        if len(txt) < n:
+            return False
 
     # Возвращаем лист значений которые мы получаем
-    return txt[1:]
+    if n == 0 or strict == True and n == 1:
+        return txt
+    else:
+        return txt[1:]
 
 
 # Функция шифровки чисел в hash.
@@ -131,7 +145,7 @@ def decoder(b64):
 
 # Класс для тестов по математике
 class Math:
-    def __init__(self):
+    def __init__(self, name_test):
         # Данные пользователя
         self.user_answers = []
 
@@ -141,9 +155,15 @@ class Math:
         self.equations = []
         self.solve = []
 
+        # Создаём тест
+        start_test()
+
     # Нахождение и начало теста
-    def start_test(self, name):
-        self.name_test = name
+    def start_test(self):
+        pass
+
+    def show_test(self):
+        pass
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
@@ -395,7 +415,7 @@ user_test_indexes = {}  # Хранение индекса на котором о
 @Bot.message_handler(commands=['tests'])
 def show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_message = check_message(message, 2)
+    user_message = check_message(message, 2, user_command='/tests')
 
     # Сохраняем человека, для продолжения просмотра тестов
     if message.chat.id not in user_test_indexes.keys():
@@ -416,7 +436,7 @@ def show_tests(message):
 @Bot.message_handler(commands=['next'])
 def next_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_message = check_message(message, 1)
+    user_message = check_message(message, 1, user_command='/next')
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
@@ -447,7 +467,7 @@ def next_tests(message):
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3)
+    message_text = check_message(message, 3, user_command='/test_statistics')
 
     # Получаем статистику
     statistics = Statistics.get_statistics(message_text, message.chat.id)
@@ -469,7 +489,7 @@ def show_statistics(message):
 @Bot.message_handler(commands=['find'])
 def find_similar(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3)
+    message_text = check_message(message, 3, user_command='/find')
 
     # Находим топ-5 похожих слов
     similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
@@ -484,28 +504,61 @@ def find_similar(message):
 # Функция для начала тестов
 user_tests = {}  # Словарь для сохранения тестов
 
-
 @Bot.message_handler(commands=['start_test'])
 def start_test(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3)
+    message_text = check_message(message, 3, user_command='/start_test', strict=True)
 
     # Проверяем что есть такой тест по его названию или индексу
     if message_text[1].isdigit():
         test_name = Statistics.find_name(message_text[0], int(message_text[1]))
-        Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'?")
+        if test_name != None:
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
+            user_tests[message.chat.id] = test_name
+            Bot.register_next_step_handler(message, check_for_start)
+        else:
+            Bot.send_message(message.chat.id, 'Такого номера теста нет.')
     else:
         test_name = ' '.join(message_text[1:])
         if test_name in Statistics.get_tests(message_text):
-            pass                                                # Доработать!!!
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
+            user_tests[message.chat.id] = test_name
+            Bot.register_next_step_handler(message, check_for_start)
         else:
             Bot.send_message(message.chat.id, Statistics.get_tests(message_text[0]))
+
+def check_for_start(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Проверяем ответ
+    if message_text[0] == 'да':
+        Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
+        create_test(message)
+    elif message_text[0] == 'нет':
+        Bot.send_message(message.chat.id, 'Тест не начался.')
+        del user_tests[message.chat.id]
+    else:
+        Bot.send_message(message.chat.id, 'Некорректный ввод.')
+        del user_tests[message.chat.id]
+
+def create_test(message):
+    # Добавляем класс теста к человеку
+    user_tests[message.chat.id] = Math(user_tests[message.chat.id])
+
+    # Выводим тест
+    Bot.send_message(message.chat.id, user_tests[message.chat.id].show_test())
+
+    # Заходим в петлю проверки ответов
+    start_test_in_loop(message)
+
+
+def start_test_in_loop(message):
+    pass
 
 
 # testiki
 taps = {}
-
-
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
     chat_id = str(message.chat.id)
