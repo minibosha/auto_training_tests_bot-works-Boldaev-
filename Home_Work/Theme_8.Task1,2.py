@@ -6,6 +6,7 @@ except ValueError:
 if task == 1:
     import math
 
+
     # Создаём класс для точки
     class Point:
         def __init__(self, point):
@@ -19,6 +20,7 @@ if task == 1:
 
         def __repr__(self):
             return str(self.point)
+
 
     point = Point((0, 1))
     print(point.find_distance((0, 1)))
