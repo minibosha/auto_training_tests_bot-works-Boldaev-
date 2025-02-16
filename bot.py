@@ -16,6 +16,8 @@ import re
 
 import difflib
 
+from telebot import TeleBot
+
 """ Подгрузка токена бота и его создание """
 load_dotenv()
 token = getenv('token')
@@ -70,7 +72,7 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n, user_command=False, strict=False):
+def check_message(command, n, user_command=None, strict=False):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     user_object = user_object.replace('.', '')
@@ -150,18 +152,35 @@ class Math:
         self.user_answers = []
 
         # Данные для компьютера
-        self.name_test = ''
+        self.name_test = name_test
         self.answers = []
         self.equations = []
         self.solve = []
-
-        # Создаём тест
-        start_test()
+        self.tasks = []
 
     # Нахождение и начало теста
-    def start_test(self):
-        pass
+    def create_test(self):
+        # Создаём тест
+        match self.name_test:
+            case 'полные квадратные уравнения':
+                # Добавляем первое задачу и уравнения
+                self.equations += ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
 
+                # Находим решение
+                self.answers = UserFormulas.equation_solver(self.equations[:3],{'a': (0, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True)
+
+                # Добавляем решения и меняем ответ в зависимости от дискриминанта
+                if self.answers[0] == 0:
+                    self.solve += ['Вычисляем дискриминант', "Так как дискриминант равен нулю, значит один корень"]
+                    self.equations = self.equations[:2]
+                    self.answers = self.answers[:2]
+                else:
+                    self.solve += ['Вычисляем дискриминант', "Находим первый корень", "Находим второй корень"]
+
+                # Добавляем условие с уравнением
+                self.tasks.append('1. Решите полное приведённое квадратное уравнение, в ответ впишите корни без пробелов в порядке возрастания.')
+
+    # Вывод номеров теста
     def show_test(self):
         pass
 
@@ -263,6 +282,20 @@ class UserFormulas:
 
             # Удаляем результаты
             results.clear()
+
+    @staticmethod
+    def show_task_eq(equation, **symbols):
+        # Заменяем указатели на значения из symbols
+        for key, value in symbols.items():
+            # Определяем знак для значения
+            sign = '+' if value >= 0 else '-'
+            # Форматируем строку с пробелом перед знаком
+            equation = equation.replace(key, f"{sign} {abs(value)}")
+
+        # Убираем лишний пробел перед первым знаком, если он есть
+        equation = equation.replace(' + ', ' + ').replace(' - ', ' - ')
+
+        return equation
 
 
 # Класс выводящий разную статистику и информацию из json файлов
@@ -512,20 +545,23 @@ def start_test(message):
     # Проверяем что есть такой тест по его названию или индексу
     if message_text[1].isdigit():
         test_name = Statistics.find_name(message_text[0], int(message_text[1]))
-        if test_name != None:
+        if test_name is None:
+            Bot.send_message(message.chat.id, 'Такого номера теста нет.')
+        else:
             Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
             user_tests[message.chat.id] = test_name
+
             Bot.register_next_step_handler(message, check_for_start)
-        else:
-            Bot.send_message(message.chat.id, 'Такого номера теста нет.')
     else:
         test_name = ' '.join(message_text[1:])
         if test_name in Statistics.get_tests(message_text):
             Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
             user_tests[message.chat.id] = test_name
+
             Bot.register_next_step_handler(message, check_for_start)
         else:
             Bot.send_message(message.chat.id, Statistics.get_tests(message_text[0]))
+
 
 def check_for_start(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
@@ -533,28 +569,69 @@ def check_for_start(message):
 
     # Проверяем ответ
     if message_text[0] == 'да':
-        Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
-        create_test(message)
+        Bot.send_message(message.chat.id, 'Вы хотите получить решения? (да/нет)')
+        Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] == 'нет':
         Bot.send_message(message.chat.id, 'Тест не начался.')
         del user_tests[message.chat.id]
+    elif message_text[0] == '/end':
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        del user_tests[message.chat.id]
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод.')
+        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
         del user_tests[message.chat.id]
 
-def create_test(message):
+
+def check_for_solve(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Проверяем ответ
+    if message_text[0] == 'да':
+        Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
+        create_test(message, True)
+    elif message_text[0] == 'нет':
+        Bot.send_message(message.chat.id, 'Решения теста не будет')
+        create_test(message, False)
+    elif message_text[0] == '/end':
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        del user_tests[message.chat.id]
+    else:
+        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
+        create_test(message, False)
+
+
+def create_test(message, need_solve):
     # Добавляем класс теста к человеку
     user_tests[message.chat.id] = Math(user_tests[message.chat.id])
+
+    # Создаём тест
+    user_tests[message.chat.id].create_test()
 
     # Выводим тест
     Bot.send_message(message.chat.id, user_tests[message.chat.id].show_test())
 
     # Заходим в петлю проверки ответов
-    start_test_in_loop(message)
+    Bot.send_message(message.chat.id, '\nМожете начать отправлять ответы.\nПравила ввода ответов: ...')
+    Bot.register_next_step_handler(message, save_answers)
 
 
-def start_test_in_loop(message):
-    pass
+def save_answers(message):
+    # Проверка сообщения
+
+    # Проверяем ответ
+
+    # Ждём ответы дальше
+    Bot.register_next_step_handler(message, save_answers)
+
+
+def show_results(message):
+    # Выводим решения (если нужно)
+
+    # Выводим Решения
+
+    # Выводим проверку ответов
+    del user_tests[message.chat.id]
 
 
 # testiki
