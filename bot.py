@@ -467,33 +467,29 @@ class Statistics:
 
     # Добавление статистики
     @staticmethod
-    def add_statistics(point, subject, user_id, name):
-        data = show_data()
+    def add_statistics(point: int, subject: str, user_id: str, name: str):
+        # Путь к JSON-файлу
+        file_path = "files\\data.json"
 
-        # Инициализируем структуру данных, если она не существует
+        # Чтение JSON-файла
+        with open(file_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        # Добавление данных
         if user_id not in data:
-            data[user_id] = {}
+            data[user_id] = {}  # Создаём запись для пользователя, если её нет
+
         if subject not in data[user_id]:
-            data[user_id][subject] = {}
+            data[user_id][subject] = {}  # Создаём запись для предмета, если её нет
+
         if name not in data[user_id][subject]:
-            data[user_id][subject][name] = []
+            data[user_id][subject][name] = []  # Создаём запись для теста, если её нет
 
-        # Если длина списка больше или равна 100, очищаем его
-        if len(data[user_id][subject][name]) >= 100:
-            data[user_id][subject][name] = []
-
-        # Добавляем балл на тест
+        # Добавляем новое значение
         data[user_id][subject][name].append(point)
 
-        # Если больше 100 прохождений теста (возможно спам), то обновляем результаты теста
-        if len(data[user_id][subject][name]) > 100:
-            data[user_id][subject][name] = []
-
-        # Добавляем балл на тест
-        data[user_id][subject][name].append(point)
-
-        # Сохраняем изменения обратно в файл
-        with open('files\\data.json', 'w', encoding='utf-8') as file:
+        # Запись обновлённых данных обратно в JSON-файл
+        with open(file_path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
 
