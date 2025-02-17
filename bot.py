@@ -147,42 +147,100 @@ def decoder(b64):
 
 # Класс для тестов по математике
 class Math:
-    def __init__(self, name_test):
+    def __init__(self, name_test, need_solve):
         # Данные пользователя
         self.user_answers = []
 
         # Данные для компьютера
+        self.tasks = []  # Задачи
+        self.solve = []  # Решения на задачи
+        self.answers = []  # Ответы на задачи
+
         self.name_test = name_test
-        self.answers = []
-        self.equations = []
-        self.solve = []
-        self.tasks = []
+        self.need_solve = need_solve
 
     # Нахождение и начало теста
     def create_test(self):
+        # Переменные которые могут пригодиться при создании теста
+        equations = []
+        answers = []
+        symbol = []
+        other = []
+
         # Создаём тест
         match self.name_test:
             case 'полные квадратные уравнения':
-                # Добавляем первое задачу и уравнения
-                self.equations += ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
+                # 1. Полное приведённое квадратное уравнение.
+                # Создаём уравнение
+                equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
+                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
-                # Находим решение
-                self.answers = UserFormulas.equation_solver(self.equations[:3],{'a': (0, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True)
+                # Создаём решение, если нужно
+                other = UserFormulas.show_task_eq("ax^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
-                # Добавляем решения и меняем ответ в зависимости от дискриминанта
-                if self.answers[0] == 0:
-                    self.solve += ['Вычисляем дискриминант', "Так как дискриминант равен нулю, значит один корень"]
-                    self.equations = self.equations[:2]
-                    self.answers = self.answers[:2]
+                # Проверяем что дискриминант не ноль
+                if answers[0]:
+                    self.solve.append(UserFormulas.create_solve_txt(1, other, ['Находим дискриминант (можно решить Виета), т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
                 else:
-                    self.solve += ['Вычисляем дискриминант', "Находим первый корень", "Находим второй корень"]
+                    self.solve.append(UserFormulas.create_solve_txt(1, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
 
-                # Добавляем условие с уравнением
-                self.tasks.append('1. Решите полное приведённое квадратное уравнение, в ответ впишите корни без пробелов в порядке возрастания.')
+                # Добавляем ответ
+                equations = sorted(answers[1:])
+                answers = ''
+                for an in equations:
+                    answers += str(int(an))
+                self.answers.append(answers)
+
+                # Создаём первый вопрос
+                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+
+                # 2. Полное квадратное уравнение.
+                # Создаём уравнение
+                equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
+                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-10, 10), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
+
+                # Создаём решение, если нужно
+                other = UserFormulas.show_task_eq("ax^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
+
+                # Проверяем что дискриминант не ноль
+                if answers[0]:
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
+                else:
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
+
+                # Добавляем ответ
+                equations = sorted(answers[1:])
+                answers = ''
+                for an in equations:
+                    answers += str(int(an))
+                self.answers.append(answers)
+
+                # Создаём первый вопрос
+                self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
+
 
     # Вывод номеров теста
     def show_test(self):
-        pass
+        return array_for_message(self.tasks), len(self.tasks)
+
+    # Сохранение ответа
+    def add_answer(self, n, task, ans):
+        if ans:
+            self.answers[task] = ans
+        else:
+            self.answers = [0] * n
+            self.answers[task] = ans
+
+    # Выводим решение
+    def show_solve(self):
+        if self.need_solve == True:
+            return array_for_message(self.solve)
+        else:
+            return False
+
+    # Проверяем ответы
+    def check_answers(self):
+
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
@@ -191,13 +249,20 @@ class UserFormulas:
     @staticmethod
     def normal(nums, after_point):
         # Регулярное выражение для проверки числа с не более чем n цифрами после запятой
-        pattern = r'^\d+(\.\d{1,' + str(after_point) + '})?$'
+        if after_point == 0:
+            pattern = False
+        else:
+            pattern = r'^\d+(\.\d{1,' + str(after_point) + '})?$'
 
         # Проверяем все числа на нормальность
         res = []
-        for num in nums:
-            num = abs(num)
-            res.append(bool(re.match(pattern, str(num))))
+        if pattern:
+            for num in nums:
+                num = abs(num)
+                res.append(bool(re.match(pattern, str(num))))
+        else:
+            for num in nums:
+                res.append(num.is_integer())
 
         # Выводим ответ после проверки всех чисел
         return all(res)
@@ -214,79 +279,81 @@ class UserFormulas:
     # Функция для вычисления уравнений
     @staticmethod
     def equation_solver(eqs, ranges, normal_check=False, after_point=4, round_check=False):
-        # Создание нужных ячеек памяти
-        results = []
-        numbers = {}
+        while True:
+            # Создание нужных ячеек памяти
+            results = []
+            numbers = {}
 
-        # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
-        for _ in range(1000000):
+            # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
+            for _ in range(1000000):
 
-            # Проверяем что нет доп. переменных
-            equations = []  # Массив для уравнений
-            dop_vars = {}  # Массив для добавочных переменных
+                # Проверяем что нет доп. переменных
+                equations = []  # Массив для уравнений
+                dop_vars = {}  # Массив для добавочных переменных
 
-            for ind, eq in enumerate(eqs):
-                if '=' in eq:
-                    ind_sym = eq.index('=')
-                    if ind_sym:
-                        dop_vars[ind] = eq[ind_sym + 1:]
-                        equations.append(eq[:ind_sym])
+                for ind, eq in enumerate(eqs):
+                    if '=' in eq:
+                        ind_sym = eq.index('=')
+                        if ind_sym:
+                            dop_vars[ind] = eq[ind_sym + 1:]
+                            equations.append(eq[:ind_sym])
+                    else:
+                        equations.append(eq)
+
+                # Создаём рандомные числа
+                for ind, obj in enumerate(ranges.keys()):
+                    numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
+
+                # Заранее определяем массив переменных
+                symbols_list = list(numbers.keys())  # Преобразуем в список
+                symbols_list.extend(list(dop_vars.values()))  # Добавляем доп. переменные
+
+                # Создаем символы из списка
+                variables = {var: symbols(var) for var in symbols_list}
+
+                # Проверяем числа на уравнениях
+                for ind, equation in enumerate(equations):
+                    # Создаём уравнение
+                    expr = sympify(equation.strip())
+
+                    # Назначаем переменной значение
+                    values = {variables[var]: value for var, value in numbers.items() if var in variables}
+
+                    # Вычисляем результат (Проверка, что число не комплексное)
+                    try:
+                        res = float(expr.subs(values))
+                        results.append(res)
+
+                        # Добавляем доп. переменные
+                        val = dop_vars.get(ind, False)
+                        if val:
+                            numbers[val] = res
+
+                    except TypeError:
+                        results.clear()
+
+                # Округляем числа если это нужно
+                if round_check:
+                    results = UserFormulas.round_nums(results, after_point)
+
+                # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
+                if normal_check:
+                    if len(results) == len(equations):
+                        if UserFormulas.normal(results, after_point):
+                            return results, numbers
                 else:
-                    equations.append(eq)
-
-            # Создаём рандомные числа
-            for ind, obj in enumerate(ranges.keys()):
-                numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
-
-            # Заранее определяем массив переменных
-            symbols_list = list(numbers.keys())  # Преобразуем в список
-            symbols_list.extend(list(dop_vars.values()))  # Добавляем доп. переменные
-
-            # Создаем символы из списка
-            variables = {var: symbols(var) for var in symbols_list}
-
-            # Проверяем числа на уравнениях
-            for ind, equation in enumerate(equations):
-                # Создаём уравнение
-                expr = sympify(equation.strip())
-
-                # Назначаем переменной значение
-                values = {variables[var]: value for var, value in numbers.items() if var in variables}
-
-                # Вычисляем результат (Проверка, что число не комплексное)
-                try:
-                    res = float(expr.subs(values))
-                    results.append(res)
-
-                    # Добавляем доп. переменные
-                    val = dop_vars.get(ind, False)
-                    if val:
-                        numbers[val] = res
-
-                except TypeError:
-                    results.clear()
-                    break
-
-            # Округляем числа если это нужно
-            if round_check:
-                print(results)
-                results = UserFormulas.round_nums(results, after_point)
-
-            # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
-            if normal_check:
-                if len(results) == len(equations):
-                    if UserFormulas.normal(results, after_point):
+                    if any(results):
+                        print(results)
                         return results, numbers
-            else:
-                return results, numbers
 
-            # Удаляем результаты
-            results.clear()
+                # Удаляем результаты
+                results.clear()
 
+    # Функция заменяющая все символы на цифры в уравнении
     @staticmethod
-    def show_task_eq(equation, **symbols):
+    def show_task_eq(equation, **symbol):
         # Заменяем указатели на значения из symbols
-        for key, value in symbols.items():
+        for key, value in symbol.items():
             # Определяем знак для значения
             sign = '+' if value >= 0 else '-'
             # Форматируем строку с пробелом перед знаком
@@ -296,6 +363,23 @@ class UserFormulas:
         equation = equation.replace(' + ', ' + ').replace(' - ', ' - ')
 
         return equation
+
+    # Функция для создания текста для решения
+    @staticmethod
+    def create_solve_txt(num: int, eq: str, explanation: list, activity: list, answer: list, sign="="):
+        solve_txt = ''
+
+        # Подставляем номер задачи
+        solve_txt += f'Задача №{num}: {eq}\n'
+        # Подставляем значения и сохраняем текст
+        for ind in range(len(explanation)):
+            if "=" in activity[ind]:
+                solve_txt += f'{ind + 1}) {explanation[ind]}: {activity[ind][:activity[ind].index("=")]} {sign} {answer[ind]}.\n'
+            else:
+                solve_txt += f'{ind + 1}) {explanation[ind]}: {activity[ind]} {sign} {answer[ind]}.\n'
+
+        # Возвращаем текст
+        return solve_txt
 
 
 # Класс выводящий разную статистику и информацию из json файлов
@@ -569,7 +653,7 @@ def check_for_start(message):
 
     # Проверяем ответ
     if message_text[0] == 'да':
-        Bot.send_message(message.chat.id, 'Вы хотите получить решения? (да/нет)')
+        Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет)')
         Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] == 'нет':
         Bot.send_message(message.chat.id, 'Тест не начался.')
@@ -591,7 +675,7 @@ def check_for_solve(message):
         Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
         create_test(message, True)
     elif message_text[0] == 'нет':
-        Bot.send_message(message.chat.id, 'Решения теста не будет')
+        Bot.send_message(message.chat.id, 'Решение теста не будет')
         create_test(message, False)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
@@ -601,15 +685,17 @@ def check_for_solve(message):
         create_test(message, False)
 
 
+noth = [0]
 def create_test(message, need_solve):
     # Добавляем класс теста к человеку
-    user_tests[message.chat.id] = Math(user_tests[message.chat.id])
+    user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve)
 
     # Создаём тест
     user_tests[message.chat.id].create_test()
 
     # Выводим тест
-    Bot.send_message(message.chat.id, user_tests[message.chat.id].show_test())
+    tasks_txt, noth[0] = user_tests[message.chat.id].show_test()
+    Bot.send_message(message.chat.id, tasks_txt)
 
     # Заходим в петлю проверки ответов
     Bot.send_message(message.chat.id, '\nМожете начать отправлять ответы.\nПравила ввода ответов: ...')
@@ -617,9 +703,22 @@ def create_test(message, need_solve):
 
 
 def save_answers(message):
-    # Проверка сообщения
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 3, user_command='/answer')
+    if check_message(message, 3, user_command='/an'):
+        message_text = check_message(message, 3, user_command='/an')
+    elif not any(message_text):
+        message_text = [False]
 
-    # Проверяем ответ
+    # Проверка сообщения
+    if message_text[0] == '/end':
+        show_results(message)
+    elif len(message_text) == int(noth[0]):
+        if int(message_text[0]) >= int(noth[0]):
+            user_tests[message.chat.id].add_answer(noth[0], message_text[0], message_text[1])
+            Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос принят.")
+    else:
+        Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
 
     # Ждём ответы дальше
     Bot.register_next_step_handler(message, save_answers)
@@ -628,9 +727,11 @@ def save_answers(message):
 def show_results(message):
     # Выводим решения (если нужно)
 
-    # Выводим Решения
-
     # Выводим проверку ответов
+
+    # Выводим статистику
+
+    # Удаляем человека из памяти
     del user_tests[message.chat.id]
 
 
