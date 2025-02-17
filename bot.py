@@ -176,7 +176,7 @@ class Math:
                 answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
                 # Создаём решение, если нужно
-                other = UserFormulas.show_task_eq("ax^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
+                other = UserFormulas.show_task_eq("x^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
@@ -218,29 +218,52 @@ class Math:
                 # Создаём первый вопрос
                 self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
 
-
     # Вывод номеров теста
     def show_test(self):
         return array_for_message(self.tasks), len(self.tasks)
 
     # Сохранение ответа
-    def add_answer(self, n, task, ans):
-        if ans:
-            self.answers[task] = ans
+    def add_answer(self, n: int, task: int, ans: str):
+        if len(self.user_answers) != 0:
+            self.user_answers[task-1] = ans
         else:
-            self.answers = [0] * n
-            self.answers[task] = ans
+            self.user_answers = [''] * n
+            self.user_answers[task-1] = ans
 
     # Выводим решение
     def show_solve(self):
-        if self.need_solve == True:
+        if self.need_solve:
             return array_for_message(self.solve)
         else:
             return False
 
     # Проверяем ответы
     def check_answers(self):
+        ans = ''
+        m = 0
+        for ind in range(len(self.answers)):
+            ans += f'Задача №{ind+1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
 
+            # Вердикт
+            if self.user_answers[ind] == self.answers[ind]:
+                ans += 'Правильно\n'
+                m += 1
+            else:
+                ans += 'Неправильно\n'
+
+        # Результат
+        ans += f'Итог: {m}/{len(self.answers)} ({int(m/len(self.answers*100))}%) правильных.'
+
+        return ans
+
+    # Выводим кол-во правильных ответов
+    def get_point(self):
+        n = 0
+        for ind in range(len(self.answers)):
+            if self.user_answers[ind] == self.answers[ind]:
+                n += 1
+
+        return n
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
@@ -422,7 +445,7 @@ class Statistics:
                 subject = "physics"
 
             # Получаем статистику
-            result = data.get("id", {}).get(subject, {}).get(test_name)  # Удалить "id", заменить на переменную!!!
+            result = data.get(user_id, {}).get(subject, {}).get(test_name)  # Удалить "id", заменить на переменную!!!
             if result is not None:
                 return result
             else:
@@ -475,8 +498,6 @@ class Statistics:
 
 
 """ Команды бота и ответы на них """
-
-
 # Вывод при команде старт
 @Bot.message_handler(commands=['start'])
 def start(message):
@@ -661,6 +682,10 @@ def check_for_start(message):
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
         del user_tests[message.chat.id]
+
+        # Очищаем следующий шаг
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        return True
     else:
         Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
         del user_tests[message.chat.id]
@@ -680,6 +705,10 @@ def check_for_solve(message):
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
         del user_tests[message.chat.id]
+
+        # Очищаем следующий шаг
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        return True
     else:
         Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
         create_test(message, False)
@@ -707,32 +736,46 @@ def save_answers(message):
     message_text = check_message(message, 3, user_command='/answer')
     if check_message(message, 3, user_command='/an'):
         message_text = check_message(message, 3, user_command='/an')
-    elif not any(message_text):
+    elif check_message(message, 0, user_command='/end'):
+        message_text = ['/end']
+    elif not any([message_text]):
         message_text = [False]
 
     # Проверка сообщения
     if message_text[0] == '/end':
         show_results(message)
-    elif len(message_text) == int(noth[0]):
-        if int(message_text[0]) >= int(noth[0]):
-            user_tests[message.chat.id].add_answer(noth[0], message_text[0], message_text[1])
-            Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос принят.")
+    elif len(message_text) == int(noth[0]) and int(message_text[0]) <= int(noth[0]):
+        user_tests[message.chat.id].add_answer(noth[0], int(message_text[0]), message_text[1])
+        Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.")
+        # Ждём ответы дальше
+        Bot.register_next_step_handler(message, save_answers)
     else:
         Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+        # Ждём ответы дальше
+        Bot.register_next_step_handler(message, save_answers)
 
-    # Ждём ответы дальше
-    Bot.register_next_step_handler(message, save_answers)
 
+def show_results(message):                                                                      # Ошибка что переходит, завтра спросить!!! Переходит назад почему-то (было)
+    # Очищаем следующий шаг
+    Bot.clear_step_handler_by_chat_id(message.chat.id)
 
-def show_results(message):
-    # Выводим решения (если нужно)
+    if len(user_tests[message.chat.id].user_answers) == 0:
+        Bot.send_message(message.chat.id, 'Вы не дали ни одного ответа, результат теста не будет засчитан.')
+        return True
+    else:
+        # Выводим решения (если нужно)
+        Bot.send_message(message.chat.id, user_tests[message.chat.id].show_solve())
 
-    # Выводим проверку ответов
+        # Выводим проверку ответов
+        Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers())
 
-    # Выводим статистику
+        # Выводим статистику
+        Statistics.add_statistics(user_tests[message.chat.id].get_point(), 'math', message.chat.id, user_tests[message.chat.id].name_test)
 
     # Удаляем человека из памяти
     del user_tests[message.chat.id]
+
+    return True
 
 
 # testiki
@@ -743,8 +786,7 @@ def nothing(message):
     taps_count = taps.get(chat_id, -1)
 
     if taps_count == -1:
-        Bot.send_message(message.chat.id,
-                         'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
+        Bot.send_message(message.chat.id, 'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
         taps[chat_id] = 0  # Инициализируем счетчик тапов
         Bot.register_next_step_handler(message, nothing)
     else:
