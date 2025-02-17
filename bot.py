@@ -176,7 +176,7 @@ class Math:
                 answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
                 # Создаём решение, если нужно
-                other = UserFormulas.show_task_eq("x^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
+                other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
@@ -200,7 +200,7 @@ class Math:
                 answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-10, 10), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
                 # Создаём решение, если нужно
-                other = UserFormulas.show_task_eq("ax^2 b c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
+                other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
@@ -252,7 +252,7 @@ class Math:
                 ans += 'Неправильно\n'
 
         # Результат
-        ans += f'Итог: {m}/{len(self.answers)} ({int(m/len(self.answers*100))}%) правильных.'
+        ans += f'Итог: {m}/{len(self.answers)} ({int(m/len(self.answers)*100)}%) правильных.'
 
         return ans
 
@@ -445,7 +445,7 @@ class Statistics:
                 subject = "physics"
 
             # Получаем статистику
-            result = data.get(user_id, {}).get(subject, {}).get(test_name)  # Удалить "id", заменить на переменную!!!
+            result = data.get(str(user_id), {}).get(subject, {}).get(test_name)
             if result is not None:
                 return result
             else:
@@ -501,8 +501,7 @@ class Statistics:
 # Вывод при команде старт
 @Bot.message_handler(commands=['start'])
 def start(message):
-    Bot.send_message(message.chat.id,
-                     'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
+    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
 
 
 # Вывод информации для помощи пользователю
@@ -605,23 +604,26 @@ def next_tests(message):
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3, user_command='/test_statistics')
+    message_text = check_message(message, 2, user_command='/test_statistics')
 
     # Получаем статистику
-    statistics = Statistics.get_statistics(message_text, message.chat.id)
+    if message_text:
+        statistics = Statistics.get_statistics(message_text, message.chat.id)
 
-    # Проверка, что мы получили массив статистики, и преобразуем его в понятную информацию
-    if not isinstance(statistics, str):
-        answer = [0, 0, 0, 0, 0]
-        answer[0] = f"Количество попыток - {len(statistics)}"
-        answer[1] = f"Средний балл - {sum(statistics) / len(statistics)}"
-        answer[2] = f"Лучший балл - {max(statistics)}"
-        answer[3] = f"Баллы на первой попытке - {statistics[0]}"
-        answer[4] = f"Баллы на последней попытке - {statistics[-1]}"
+        # Проверка, что мы получили массив статистики, и преобразуем его в понятную информацию
+        if not isinstance(statistics, str):
+            answer = [0, 0, 0, 0, 0]
+            answer[0] = f"Количество попыток - {len(statistics)}"
+            answer[1] = f"Средний балл - {sum(statistics) / len(statistics)}"
+            answer[2] = f"Лучший балл - {max(statistics)}"
+            answer[3] = f"Баллы на первой попытке - {statistics[0]}"
+            answer[4] = f"Баллы на последней попытке - {statistics[-1]}"
 
-        statistics = array_for_message(answer)
+            statistics = array_for_message(answer)
 
-    Bot.send_message(message.chat.id, statistics)
+        Bot.send_message(message.chat.id, statistics)
+    else:
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
 
 
 @Bot.message_handler(commands=['find'])
@@ -755,7 +757,7 @@ def save_answers(message):
         Bot.register_next_step_handler(message, save_answers)
 
 
-def show_results(message):                                                                      # Ошибка что переходит, завтра спросить!!! Переходит назад почему-то (было)
+def show_results(message):
     # Очищаем следующий шаг
     Bot.clear_step_handler_by_chat_id(message.chat.id)
 
