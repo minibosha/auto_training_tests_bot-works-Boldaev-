@@ -149,15 +149,15 @@ def decoder(b64):
 class Math:
     def __init__(self, name_test, need_solve):
         # Данные пользователя
-        self.user_answers = []
+        self.user_answers: list[str] = []
 
         # Данные для компьютера
-        self.tasks = []  # Задачи
-        self.solve = []  # Решения на задачи
-        self.answers = []  # Ответы на задачи
+        self.tasks: list[str] = []  # Задачи
+        self.solve: list[str] = []  # Решения на задачи
+        self.answers: list[str] = []  # Ответы на задачи
 
-        self.name_test = name_test
-        self.need_solve = need_solve
+        self.name_test: str = name_test
+        self.need_solve: bool = need_solve
 
     # Нахождение и начало теста
     def create_test(self):
@@ -175,7 +175,7 @@ class Math:
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
                 answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
-                # Создаём решение, если нужно
+                # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
@@ -199,7 +199,7 @@ class Math:
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
                 answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-10, 10), 'b': (-10, 10), 'c': (-10, 10)}, normal_check=True, after_point=0)
 
-                # Создаём решение, если нужно
+                # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
@@ -217,10 +217,20 @@ class Math:
 
                 # Создаём первый вопрос
                 self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
+            case "сложение":
+                # Создаём три простых задачи и добавляем нужное по ним
+                self.solve.append('Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
+
+                for ind in range(3):
+                    answers, symbol = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, normal_check=True, after_point=0)
+                    equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
+                    self.answers.append(str(int(sum(answers))))
+
+                self.tasks.append(f'Решите три примера:\n1. {equations[0]}\n2. {equations[1]}\n3. {equations[2]}')
 
     # Вывод номеров теста
     def show_test(self):
-        return array_for_message(self.tasks), len(self.tasks)
+        return array_for_message(self.tasks), len(self.answers)
 
     # Сохранение ответа
     def add_answer(self, n: int, task: int, ans: str):
@@ -468,6 +478,9 @@ class Statistics:
     # Добавление статистики
     @staticmethod
     def add_statistics(point: int, subject: str, user_id: str, name: str):
+        # Меняем id на строчку
+        user_id = str(user_id)
+
         # Путь к JSON-файлу
         file_path = "files\\data.json"
 
@@ -476,12 +489,15 @@ class Statistics:
             data = json.load(file)
 
         # Добавление данных
+        print(data)
         if user_id not in data:
             data[user_id] = {}  # Создаём запись для пользователя, если её нет
 
+        print(data)
         if subject not in data[user_id]:
             data[user_id][subject] = {}  # Создаём запись для предмета, если её нет
 
+        print(data)
         if name not in data[user_id][subject]:
             data[user_id][subject][name] = []  # Создаём запись для теста, если её нет
 
@@ -548,14 +564,15 @@ user_test_indexes = {}  # Хранение индекса на котором о
 @Bot.message_handler(commands=['tests'])
 def show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_message = check_message(message, 2, user_command='/tests')
+    user_message = check_message(message, 2, user_command='/tests', strict=True)
 
-    # Сохраняем человека, для продолжения просмотра тестов
-    if message.chat.id not in user_test_indexes.keys():
-        user_test_indexes[message.chat.id] = [0, user_message]
+    # Проверка, что сообщение правильное
+    if not isinstance(user_message, bool):
+        user_answer = Statistics.get_tests(user_message)
+    else:
+        user_answer = 'Неизвестное сообщение или неправильный ввод.'
 
     # Получение результата в зависимости от ответа
-    user_answer = Statistics.get_tests(user_message)
     if user_answer == 'Неизвестное сообщение или неправильный ввод.':
         Bot.send_message(message.chat.id, user_answer)
     elif len(user_answer) >= 20:
@@ -563,6 +580,10 @@ def show_tests(message):
                                                             omissions="index") + "\nНапишите /next для вывода тестов дальше.")
     else:
         Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"))
+
+    # Сохраняем человека, для продолжения просмотра тестов
+    if message.chat.id not in user_test_indexes.keys():
+        user_test_indexes[message.chat.id] = [0, user_message]
 
 
 # Функция для продолжения просмотра тестов
@@ -626,6 +647,10 @@ def show_statistics(message):
 def find_similar(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 3, user_command='/find')
+
+    if isinstance(message_text, bool):
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
+        return False
 
     # Находим топ-5 похожих слов
     similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
@@ -742,7 +767,11 @@ def save_answers(message):
     # Проверка сообщения
     if message_text[0] == '/end':
         show_results(message)
-    elif len(message_text) == int(noth[0]) and int(message_text[0]) <= int(noth[0]):
+    elif isinstance(message_text[0], int):
+        Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+        # Ждём ответы дальше
+        Bot.register_next_step_handler(message, save_answers)
+    elif int(message_text[0]) <= int(noth[0]):
         user_tests[message.chat.id].add_answer(noth[0], int(message_text[0]), message_text[1])
         Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.")
         # Ждём ответы дальше
