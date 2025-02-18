@@ -546,14 +546,12 @@ def help_for_user(message):
         table_str += '\n\n'
         change = True
 
-    Bot.send_message(message.chat.id,
-                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
+    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
 
-    Bot.send_message(message.chat.id, 'Команды:')
+    Bot.send_message(message.chat.id, 'Команды которые нужно посылать программе:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
 
-    Bot.send_message(message.chat.id, 'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов со стороны программы (предмет, номер, переспрашивание...).\nКак пользоваться: в таблице указана команда и её аттрибуты. Аттрибуты вводятся через пробел после команды в порядке указанном в таблице. Например: /start; /start_test math 1; /an 1 -0-4.\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются.\nЖелаем приятного пользования! Советуем посмотреть пример разговора для более понятного понимания возможностей программы и правильного разговора с ней.')
-
+    Bot.send_message(message.chat.id, 'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
 # Вывод возможных тестов
 user_test_indexes = {}  # Хранение индекса на котором остановился человек
@@ -679,14 +677,14 @@ def start_test(message):
         if test_name is None:
             Bot.send_message(message.chat.id, 'Такого номера теста нет.')
         else:
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)")
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
     else:
         test_name = ' '.join(message_text[1:])
         if test_name in Statistics.get_tests(message_text):
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет)")
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)")
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
@@ -699,10 +697,10 @@ def check_for_start(message):
     message_text = check_message(message, 1, strict=True)
 
     # Проверяем ответ
-    if message_text[0] == 'да':
-        Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет)')
+    if message_text[0] in ('да', 'yes', 'y'):
+        Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, check_for_solve)
-    elif message_text[0] == 'нет':
+    elif message_text[0] in ('нет', 'no', 'n'):
         Bot.send_message(message.chat.id, 'Тест не начался.')
         del user_tests[message.chat.id]
     elif message_text[0] == '/end':
@@ -722,10 +720,10 @@ def check_for_solve(message):
     message_text = check_message(message, 1, strict=True)
 
     # Проверяем ответ
-    if message_text[0] == 'да':
+    if message_text[0] in ('да', 'yes', 'y'):
         Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
         create_test(message, True)
-    elif message_text[0] == 'нет':
+    elif message_text[0] in ('нет', 'no', 'n'):
         Bot.send_message(message.chat.id, 'Решение теста не будет')
         create_test(message, False)
     elif message_text[0] == '/end':
@@ -753,7 +751,7 @@ def create_test(message, need_solve):
     Bot.send_message(message.chat.id, tasks_txt)
 
     # Заходим в петлю проверки ответов
-    Bot.send_message(message.chat.id, '\nМожете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов со стороны программы (предмет, номер, переспрашивание...).\nКак пользоваться: в таблице указана команда и её аттрибуты. Аттрибуты вводятся через пробел после команды в порядке указанном в таблице. Например: /start; /start_test math 1; /an 1 -0-4.\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются.\nЖелаем приятного пользования! Советуем посмотреть пример разговора для более понятного понимания возможностей программы и правильного разговора с ней.')
+    Bot.send_message(message.chat.id, 'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
     Bot.register_next_step_handler(message, save_answers)
 
 
@@ -764,12 +762,18 @@ def save_answers(message):
         message_text = check_message(message, 3, user_command='/an')
     elif check_message(message, 0, user_command='/end'):
         message_text = ['/end']
+    elif check_message(message, 0, user_command='/help'):
+        message_text = ['/help']
     elif not any([message_text]):
         message_text = [False]
 
     # Проверка сообщения
     if message_text[0] == '/end':
         show_results(message)
+    elif message_text[0] == '/help':
+        help_for_user(message)
+        # Ждём ответы дальше
+        Bot.register_next_step_handler(message, save_answers)
     elif isinstance(message_text[0], int):
         Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
         # Ждём ответы дальше
