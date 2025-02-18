@@ -489,15 +489,12 @@ class Statistics:
             data = json.load(file)
 
         # Добавление данных
-        print(data)
         if user_id not in data:
             data[user_id] = {}  # Создаём запись для пользователя, если её нет
 
-        print(data)
         if subject not in data[user_id]:
             data[user_id][subject] = {}  # Создаём запись для предмета, если её нет
 
-        print(data)
         if name not in data[user_id][subject]:
             data[user_id][subject][name] = []  # Создаём запись для теста, если её нет
 
@@ -669,6 +666,11 @@ user_tests = {}  # Словарь для сохранения тестов
 def start_test(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 3, user_command='/start_test', strict=True)
+
+    # Проверяем что правильное сообщение
+    if isinstance(message_text, bool) or len(message_text) == 1:
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
+        return False
 
     # Проверяем что есть такой тест по его названию или индексу
     if message_text[1].isdigit():
