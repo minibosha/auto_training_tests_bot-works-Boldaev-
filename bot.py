@@ -566,10 +566,10 @@ def show_tests(message):
     if not isinstance(user_message, bool):
         user_answer = Statistics.get_tests(user_message)
     else:
-        user_answer = 'Неизвестное сообщение или неправильный ввод.'
+        user_answer = 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests subject.\nКоманда для помощи: "/help".'
 
     # Получение результата в зависимости от ответа
-    if user_answer == 'Неизвестное сообщение или неправильный ввод.':
+    if user_answer == 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests subject.\nКоманда для помощи: "/help".':
         Bot.send_message(message.chat.id, user_answer)
     elif len(user_answer) >= 20:
         Bot.send_message(message.chat.id, array_for_message(user_answer,
@@ -590,8 +590,7 @@ def next_tests(message):
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id,
-                         "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
+        Bot.send_message(message.chat.id, "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
@@ -636,7 +635,7 @@ def show_statistics(message):
 
         Bot.send_message(message.chat.id, statistics)
     else:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics subject name.\nКоманда для помощи: '/help'.")
 
 
 @Bot.message_handler(commands=['find'])
@@ -645,7 +644,7 @@ def find_similar(message):
     message_text = check_message(message, 3, user_command='/find')
 
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.")
         return False
 
     # Находим топ-5 похожих слов
@@ -668,7 +667,7 @@ def start_test(message):
 
     # Проверяем что правильное сообщение
     if isinstance(message_text, bool) or len(message_text) == 1:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.")
         return False
 
     # Проверяем что есть такой тест по его названию или индексу
