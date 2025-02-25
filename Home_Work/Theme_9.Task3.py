@@ -1,13 +1,12 @@
 """ Задание 3. Тема 9: Продвинутые функции. Декораторы """
+# Библиотека для работы с системой
+import sys
+# Библиотека для замера времени
+import time
 # Функция из библиотеки для вычисления произведения всех чисел
 from math import prod
 # Библиотека, чтобы указать тип данных - функция.
 from typing import Callable
-# Библиотека для замера времени
-import time
-# Библиотека для работы с системой
-import sys
-
 
 # Устанавливаем расширение на размер чисел больше
 sys.set_int_max_str_digits(999999999)
@@ -26,14 +25,13 @@ def time_it(func: Callable) -> Callable:
 
         return result
 
-
     return wrapper
 
 
 # Вычисление "факториала"
 @time_it
 def factorial(n: int) -> int:
-    return prod(range(1, n+1))
+    return prod(range(1, n + 1))
 
 
 print(factorial(10000))
