@@ -145,6 +145,100 @@ def decoder(b64):
 """ Классы """
 
 
+# Класс хэша
+class Hash:
+    def __init__(self):
+        self.string = []  # Список для хранения строк
+        self.encrypted = ''  # Переменная для хранения зашифрованной строки
+
+    # Функция расшифровки
+    def transcriber(self, hash: str) -> list:
+        # Пример простой расшифровки: просто возвращаем строку в исходном виде
+        return hash.split()  # Разделяем строку на элементы
+
+    # Функция для вывода расшифровки коэффициентов
+    def read(self, ind: int, hash: str) -> list:
+        if self.string:
+            return self.string[ind]
+        else:
+            # Если строка пуста, расшифровываем хэш
+            self.string = self.transcriber(hash)
+            return self.string[ind]
+
+    # Функция зашифровки чисел
+    def string_for_show(self) -> str:
+        # 1 Шаг: Подготовка строки к шифрованию
+        for ind, nums in enumerate(self.string):
+            # Разбиваем строку на числа и преобразуем их в список
+            nums = list(map(float, nums.split()[:-1]))
+
+            # Создаем словарь для подсчета повторений
+            count_dict = {}
+            for number in nums:
+                if number in count_dict:
+                    count_dict[number] += 1
+                else:
+                    count_dict[number] = 1
+
+            # Формируем результат
+            result = []
+            for number, count in count_dict.items():
+                if count > 3:
+                    if number.is_integer():
+                        result.append(f"{int(number)}*{count}")
+                    else:
+                        result.append(f"{number}*{count}")
+                else:
+                    if number.is_integer():
+                        result.append(int(number))
+                    else:
+                        result.append(number)
+
+            # Переделываем результат в строку для дальнейшего использования
+            nums = result
+            print(nums)
+            result = []  # Очищаем, чтобы не тратить память
+
+            # Переделываем все числа в шестнадцатеричную. Меняем дробные и создаём степени по возможности.
+            for num in nums:
+                if isinstance(num, str):
+                    if '*' in num:
+                        if float(num.split('*')[0]).is_integer():
+                            num = str(num)
+                            result += str(str(hex(int(num[0]))[2:].upper()) + '.' + str(hex(int(num[-1]))[2:].upper()))
+
+                        else:
+                            num = num.split('*')
+                            result += num[0]
+                    elif '^' in num:
+                        pass
+                elif isinstance(num, float):
+                    pass
+                else:
+                    print(hex(num)[2:].upper())
+                    result += hex(num)[2:].upper()
+
+                # Сохраняем изменения
+                self.string[ind] = ' '.join(result)
+
+        # Возвращаем строку
+        return self.string
+
+    # Функция для зашифровки числа и его вывода
+    def show(self):
+        return self.string_for_show()
+
+    # Функция добавления коэффициентов задачи
+    def add(self, num) -> None:
+        # Меняем массив если это числа или строки, но не одной строкой
+        if type(num) is list:
+            num = ' '.join(map(str, num))
+
+        # Добавляем строку в список
+        num += ' ,'
+        self.string.append(num)
+
+
 # Класс для тестов по математике
 class Math:
     def __init__(self, name_test, need_solve):
