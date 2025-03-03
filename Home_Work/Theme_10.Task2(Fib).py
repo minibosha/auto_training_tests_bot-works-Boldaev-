@@ -19,7 +19,6 @@ class Fibonacci(Iterable):
         if self.value == 1:
             raise StopIteration
         if self.value == 0:
-
             return 1
 
         # Вычисляем следующее число Фибоначчи
