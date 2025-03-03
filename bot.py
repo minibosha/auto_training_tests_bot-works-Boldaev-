@@ -29,6 +29,62 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
+# Функция, которая преобразует число в 16-ричный формат.
+def to_hex(number: float) -> str:
+    if number.is_integer():
+        return hex(int(number))[2:].upper()
+    else:
+        # Для дробных чисел преобразуем целую и дробную части отдельно
+        integer_part = int(number)
+        fractional_part = int(str(number).split('.')[-1]) # Ограничиваем дробную часть двумя знаками
+        return f"{hex(integer_part)[2:].upper()}.{hex(fractional_part)[2:].upper()}"
+
+
+# Проверка, можно ли представить число как степень десятки.
+def is_power_of_ten(number: float) -> bool:
+    if number == 0:
+        return False
+    log10 = number ** (1 / 10)  # Проверяем, является ли число степенью 10
+    return log10.is_integer()
+
+
+# Функция сжимания числа, выбирая наиболее короткое представление.
+def compress_number(number: float) -> str:
+    hex_representation = to_hex(number)
+
+    # Проверяем, можно ли представить число как степень десятки
+    if is_power_of_ten(number):
+        power = int(number ** (1 / 10))
+        power_representation = f"10^{power}"
+
+        # Выбираем более короткое представление
+        if len(power_representation) < len(hex_representation):
+            return power_representation
+
+    return hex_representation
+
+
+# Функция обработки строки с числами, разделенными знаком (например, '/' или '*').
+def process_numbers(input_str: str) -> str:
+    if '/' in input_str:
+        numbers = input_str.split('/')
+        separator = '/'
+    elif '*' in input_str:
+        numbers = input_str.split('*')
+        separator = '*'
+    else:
+        # Если нет разделителя, обрабатываем как одно число
+        return compress_number(float(input_str))
+
+    # Обрабатываем каждое число
+    compressed_numbers = []
+    for num in numbers:
+        compressed_numbers.append(compress_number(float(num)))
+
+    # Возвращаем сжатую строку с тем же разделителем
+    return separator.join(compressed_numbers)
+
+
 # Нахождение топ-5 самых похожих слов по запросу
 def find_similar_words(subject, input_word):
     # Загружаем названия тестов
@@ -166,7 +222,7 @@ class Hash:
             return self.string[ind]
 
     # Функция зашифровки чисел
-    def string_for_show(self) -> str:
+    def string_for_show(self) -> list:
         # 1 Шаг: Подготовка строки к шифрованию
         for ind, nums in enumerate(self.string):
             # Разбиваем строку на числа и преобразуем их в список
@@ -183,7 +239,7 @@ class Hash:
             # Формируем результат
             result = []
             for number, count in count_dict.items():
-                if count > 3:
+                if count >= 3:
                     if number.is_integer():
                         result.append(f"{int(number)}*{count}")
                     else:
@@ -196,30 +252,14 @@ class Hash:
 
             # Переделываем результат в строку для дальнейшего использования
             nums = result
-            print(nums)
             result = []  # Очищаем, чтобы не тратить память
 
             # Переделываем все числа в шестнадцатеричную. Меняем дробные и создаём степени по возможности.
             for num in nums:
-                if isinstance(num, str):
-                    if '*' in num:
-                        if float(num.split('*')[0]).is_integer():
-                            num = str(num)
-                            result += str(str(hex(int(num[0]))[2:].upper()) + '.' + str(hex(int(num[-1]))[2:].upper()))
+                result.append(process_numbers(str(num)))
 
-                        else:
-                            num = num.split('*')
-                            result += num[0]
-                    elif '^' in num:
-                        pass
-                elif isinstance(num, float):
-                    pass
-                else:
-                    print(hex(num)[2:].upper())
-                    result += hex(num)[2:].upper()
-
-                # Сохраняем изменения
-                self.string[ind] = ' '.join(result)
+            # Сохраняем изменения
+            self.string[ind] = ' '.join(result)
 
         # Возвращаем строку
         return self.string
