@@ -29,6 +29,65 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
+# Функция разделения по языкам
+def split_by_language(input_str: str) -> list:
+    result = []
+    current_group = []
+    current_lang = None  # Текущий язык ('rus' или 'eng')
+    has_lower = False    # Есть ли в группе символы в нижнем регистре
+
+    for char in input_str:
+        if char.isalpha() or char == 'ё':
+            # Определяем язык и регистр символа
+            lang = 'rus' if detect_language(char) else 'eng'
+            is_lower = char.islower()
+
+            # Если язык или регистр изменились, завершаем текущую группу
+            if (lang != current_lang) or (is_lower != has_lower):
+                if current_group:
+                    # Добавляем группу с минусом, если есть символы в нижнем регистре
+                    result.append(('-' if has_lower else '') + ''.join(current_group))
+                    current_group = []
+                    has_lower = False
+                current_lang = lang
+
+            # Обновляем флаг нижнего регистра
+            if is_lower:
+                has_lower = True
+
+            current_group.append(char)
+        else:
+            # Если символ — разделитель, завершаем текущую группу
+            if char in {' ', ','}:
+                if current_group:
+                    result.append(('-' if has_lower else '') + ''.join(current_group))
+                    current_group = []
+                    current_lang = None
+                    has_lower = False
+                result.append(char)
+            else:
+                # Если символ не разделитель, добавляем его в текущую группу
+                if current_group:
+                    current_group.append(char)
+                else:
+                    # Если группы нет, добавляем символ как есть
+                    result.append(char)
+
+    # Добавляем последнюю группу, если она есть
+    if current_group:
+        result.append(('-' if has_lower else '') + ''.join(current_group))
+
+    # Объединяем последовательные разделители
+    merged_result = []
+    for item in result:
+        if merged_result and item in {' ', ','} and merged_result[-1] in {' ', ','}:
+            merged_result[-1] += item
+        else:
+            merged_result.append(item)
+
+    return merged_result
+
+
 # Проверка языка для расшифровки
 def detect_language(input_string):
     # Проверяем, есть ли в строке русские буквы
@@ -230,22 +289,77 @@ class Hash:
         self.encrypted = ''  # Переменная для хранения зашифрованной строки
 
     # Функция расшифровки
-    def transcriber(self, hash: str) -> list:
-        # Проверяем каждый символ для расшифровки
-        for symbol in hash:
-            pass
+    def transcriber(self) -> bool | list:
+        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w']  # Константы для постановки знаков
+        RUSS_SYMBOLS = ['ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
+        unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
+        result = []
 
-    # Функция для вывода расшифровки коэффициентов
-    def read(self, ind: int, hash: str) -> list:
-        if self.string:
-            return self.string[ind]
-        else:
-            # Если строка пуста, расшифровываем хэш
-            self.string = self.transcriber(hash)
-            return self.string[ind]
+        # Добавляем запятые в конец строк
+        for ind in range(len(unencrypted_str)):
+            unencrypted_str[ind] += ' ,'
+
+        # Разделяем символы
+        for stroke in unencrypted_str:
+            result += split_by_language(stroke)
+
+        # Очищаем результат чтобы не использовать много памяти и сохраняем результат в другой массив
+        unencrypted_str = result
+        result = []
+
+        # Меняем все буквы в числа
+        # Проверяем, что строка не разделитель перехода на новое задание
+        for stroke in unencrypted_str:
+            if stroke == ' ,':
+                result.append(' ,')
+                continue
+            else:
+                # Заменяем каждый символ на цифру (если символ это цифра)
+                chars = ''
+                for symbol in stroke:
+                    if symbol.isalpha() or symbol == 'ё':
+                        try:
+                            symbol = symbol.lower()
+                            # Проверка, что символ не шестнадцатеричной буквой
+                            if 'a' <= symbol <= 'f':
+                                chars += symbol
+                            else:
+                                # По языку определяем цифру
+                                if detect_language(symbol):
+                                    chars += str(RUSS_SYMBOLS.index(symbol))
+                                else:
+                                    chars += str(ENG_SYMBOLS.index(symbol))
+                        except ValueError:
+                            return False
+                    else:
+                        chars += symbol
+
+                # Добавляем шестнадцатеричное число в результат
+                result.append(chars)
+
+        print(result)
+
+        # Возвращаем числа из шестнадцатеричной системы в десятеричную
+
+        # Возвращаем расшифрованную строку
+        return unencrypted_str
+
+    def read(self, num_of_test, hash_str: str):
+        # Расшифровываем hash, если этого не делали
+        if not self.string:
+            self.encrypted = hash_str
+            self.string = self.transcriber()
+
+        # Проверка, что не было ошибок
+        if not self.string:
+            return 'Error'
+
+        # Выдаём коэффиценты задачи
+        return self.string[num_of_test-1]
 
     # Функция зашифровки чисел
     def string_for_show(self) -> list:
+        string = [''] * len(self.string)
         # 1 Шаг: Подготовка строки к шифрованию
         for ind, nums in enumerate(self.string):
             # Разбиваем строку на числа и преобразуем их в список
@@ -282,16 +396,16 @@ class Hash:
                 result.append(process_numbers(str(num)))
 
             # Сохраняем изменения
-            self.string[ind] = ' '.join(result)
+            string[ind] = ' '.join(result)
 
         # Возвращаем строку
-        return self.string
+        return string
 
     # Функция для зашифровки числа и его вывода
     def show(self):
         # 2 Шаг: Смена знаков
-        ENG_SYMBOLS = 'ghijklmnopqrstuv'  # Константы для постановки знаков
-        RUSS_SYMBOLS = 'ёжзийклмнопрстух'
+        ENG_SYMBOLS = 'ghijklmnopqrstuvw'  # Константы для постановки знаков
+        RUSS_SYMBOLS = 'ёжзийклмнопрстухч'
 
         encoded_str = ''
         russ = True
@@ -313,16 +427,16 @@ class Hash:
                         if minus:
                             # Проверяем язык
                             if russ:
-                                encoded_str += RUSS_SYMBOLS[int(symbol) - 1]
+                                encoded_str += RUSS_SYMBOLS[int(symbol)]
                             else:
-                                encoded_str += ENG_SYMBOLS[int(symbol) - 1]
+                                encoded_str += ENG_SYMBOLS[int(symbol)]
 
                         else:
                             # Проверяем язык
                             if russ:
-                                encoded_str += RUSS_SYMBOLS[int(symbol) - 1].upper()
+                                encoded_str += RUSS_SYMBOLS[int(symbol)].upper()
                             else:
-                                encoded_str += ENG_SYMBOLS[int(symbol) - 1].upper()
+                                encoded_str += ENG_SYMBOLS[int(symbol)].upper()
                     else:
                         # Если отрицательное число, то меняем его знак
                         if symbol == '-':
@@ -337,7 +451,8 @@ class Hash:
                 russ = not russ
 
         # Возвращаем зашифрованную строку
-        return encoded_str[1:]
+        self.encrypted = encoded_str[1:]
+        return self.encrypted
 
     # Функция добавления коэффициентов задачи
     def add(self, num) -> None:
