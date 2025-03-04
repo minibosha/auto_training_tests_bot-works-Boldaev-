@@ -29,6 +29,24 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
+# Проверка языка для расшифровки
+def detect_language(input_string):
+    # Проверяем, есть ли в строке русские буквы
+    for char in input_string:
+        if 'а' <= char <= 'я' or 'А' <= char <= 'Я':
+            return True
+    return False
+
+
+# Проверка, что строка это число
+def is_number(string: str) -> bool:
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+
+
 # Функция, которая преобразует число в 16-ричный формат.
 def to_hex(number: float) -> str:
     if number.is_integer():
@@ -36,7 +54,7 @@ def to_hex(number: float) -> str:
     else:
         # Для дробных чисел преобразуем целую и дробную части отдельно
         integer_part = int(number)
-        fractional_part = int(str(number).split('.')[-1]) # Ограничиваем дробную часть двумя знаками
+        fractional_part = int(str(number).split('.')[-1])  # Ограничиваем дробную часть двумя знаками
         return f"{hex(integer_part)[2:].upper()}.{hex(fractional_part)[2:].upper()}"
 
 
@@ -44,8 +62,11 @@ def to_hex(number: float) -> str:
 def is_power_of_ten(number: float) -> bool:
     if number == 0:
         return False
-    log10 = number ** (1 / 10)  # Проверяем, является ли число степенью 10
-    return log10.is_integer()
+    if number < 0:
+        number = abs(number)
+    if number >= 1000:
+        log10 = number ** (1 / 10)  # Проверяем, является ли число степенью 10
+        return log10.is_integer()
 
 
 # Функция сжимания числа, выбирая наиболее короткое представление.
@@ -54,6 +75,7 @@ def compress_number(number: float) -> str:
 
     # Проверяем, можно ли представить число как степень десятки
     if is_power_of_ten(number):
+        print(number)
         power = int(number ** (1 / 10))
         power_representation = f"10^{power}"
 
@@ -209,8 +231,9 @@ class Hash:
 
     # Функция расшифровки
     def transcriber(self, hash: str) -> list:
-        # Пример простой расшифровки: просто возвращаем строку в исходном виде
-        return hash.split()  # Разделяем строку на элементы
+        # Проверяем каждый символ для расшифровки
+        for symbol in hash:
+            pass
 
     # Функция для вывода расшифровки коэффициентов
     def read(self, ind: int, hash: str) -> list:
@@ -266,7 +289,55 @@ class Hash:
 
     # Функция для зашифровки числа и его вывода
     def show(self):
-        return self.string_for_show()
+        # 2 Шаг: Смена знаков
+        ENG_SYMBOLS = 'ghijklmnopqrstuv'  # Константы для постановки знаков
+        RUSS_SYMBOLS = 'ёжзийклмнопрстух'
+
+        encoded_str = ''
+        russ = True
+        # Проверяем каждое число и переделываем в буквы
+        for string in self.string_for_show():
+            encoded_str += ','  # Добавляем разделитель новой задачи
+            string = string.split()
+
+            # Проверка каждого числа
+            for num in string:
+                # Проверка на отрицательное число
+                minus = False
+
+                # Заменяем каждый символ и проверяем на минус
+                for symbol in num:
+                    # Проверяем что это числа, а не символ
+                    if is_number(symbol):
+                        # Проверяем что число положительное
+                        if minus:
+                            # Проверяем язык
+                            if russ:
+                                encoded_str += RUSS_SYMBOLS[int(symbol) - 1]
+                            else:
+                                encoded_str += ENG_SYMBOLS[int(symbol) - 1]
+
+                        else:
+                            # Проверяем язык
+                            if russ:
+                                encoded_str += RUSS_SYMBOLS[int(symbol) - 1].upper()
+                            else:
+                                encoded_str += ENG_SYMBOLS[int(symbol) - 1].upper()
+                    else:
+                        # Если отрицательное число, то меняем его знак
+                        if symbol == '-':
+                            minus = True
+
+                        # Проверяем что число положительное или отрицательное
+                        if minus:
+                            encoded_str += symbol
+                        else:
+                            encoded_str += symbol.upper()
+
+                russ = not russ
+
+        # Возвращаем зашифрованную строку
+        return encoded_str[1:]
 
     # Функция добавления коэффициентов задачи
     def add(self, num) -> None:
