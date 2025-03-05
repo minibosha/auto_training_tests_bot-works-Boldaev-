@@ -29,7 +29,7 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
-## Функция разделения по языкам
+# Функция разделения по языкам
 def split_by_language(input_str: str) -> list:
     result = []
     current_group = []
@@ -44,7 +44,7 @@ def split_by_language(input_str: str) -> list:
 
             # Если язык или регистр изменились, завершаем текущую группу
             if (lang != current_lang) or (is_lower != has_lower):
-                if not ('a' <= char <= 'f'):
+                if not ('a' <= char.lower() <= 'f'):
                     if current_group:
                         # Добавляем группу с минусом, если есть символы в нижнем регистре
                         result.append(('-' if has_lower else '') + ''.join(current_group))
@@ -247,47 +247,6 @@ def check_message(command, n, user_command=None, strict=False):
         return txt
     else:
         return txt[1:]
-
-
-# Функция шифровки чисел в hash.
-def encoder(line):
-    # Преобразуем информацию в строку
-    line = str(line)
-
-    # Преобразование строки в байты
-    byte_string = line.encode('utf-8')
-
-    # Кодирование в Base64
-    encoded_string = base64.b64encode(byte_string)
-
-    return encoded_string
-
-
-# Функция расшифровки чисел из hash
-def decoder(b64):
-    # Декодирование из Base64
-    decoded_bytes = base64.b64decode(b64)
-
-    # Преобразование байтов обратно в строку
-    decoded_string = decoded_bytes.decode('utf-8')
-
-    # Регулярное выражение для поиска чисел, включая научные обозначения
-    pattern = r'[\d]+(?:\.\d+)?(?:\^\d+)?'
-
-    # Находим все числа в строке
-    matches = re.findall(pattern, decoded_string)
-
-    # Преобразуем найденные строки в числа
-    numbers = []
-    for match in matches:
-        if '^' in match:
-            base, exponent = match.split('^')
-            number = float(base) * (10 ** int(exponent))
-        else:
-            number = float(match)
-        numbers.append(number)
-
-    return numbers
 
 
 """ Классы """
