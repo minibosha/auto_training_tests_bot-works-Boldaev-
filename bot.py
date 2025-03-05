@@ -29,7 +29,7 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
-# Функция разделения по языкам
+## Функция разделения по языкам
 def split_by_language(input_str: str) -> list:
     result = []
     current_group = []
@@ -37,24 +37,26 @@ def split_by_language(input_str: str) -> list:
     has_lower = False    # Есть ли в группе символы в нижнем регистре
 
     for char in input_str:
-        if char.isalpha() or char == 'ё':
+        if char.isalpha():
             # Определяем язык и регистр символа
             lang = 'rus' if detect_language(char) else 'eng'
             is_lower = char.islower()
 
             # Если язык или регистр изменились, завершаем текущую группу
             if (lang != current_lang) or (is_lower != has_lower):
-                if current_group:
-                    # Добавляем группу с минусом, если есть символы в нижнем регистре
-                    result.append(('-' if has_lower else '') + ''.join(current_group))
-                    current_group = []
-                    has_lower = False
-                current_lang = lang
+                if not ('a' <= char <= 'f'):
+                    if current_group:
+                        # Добавляем группу с минусом, если есть символы в нижнем регистре
+                        result.append(('-' if has_lower else '') + ''.join(current_group))
+                        current_group = []
+                        has_lower = False
+                    current_lang = lang
 
             # Обновляем флаг нижнего регистра
             if is_lower:
                 has_lower = True
 
+            # Добавляем шестнадцатеричный знак
             current_group.append(char)
         else:
             # Если символ — разделитель, завершаем текущую группу
@@ -106,8 +108,8 @@ def is_number(string: str) -> bool:
         return False
 
 
-# Функция, которая преобразует число в 16-ричный формат.
-def to_hex(number: float) -> str:
+# Функция переделывающая положительные числа в шестнадцатеричную систему
+def make_hex(number: float) -> str:
     if number.is_integer():
         return hex(int(number))[2:].upper()
     else:
@@ -115,6 +117,15 @@ def to_hex(number: float) -> str:
         integer_part = int(number)
         fractional_part = int(str(number).split('.')[-1])  # Ограничиваем дробную часть двумя знаками
         return f"{hex(integer_part)[2:].upper()}.{hex(fractional_part)[2:].upper()}"
+
+
+# Функция, которая преобразует число в 16-ричный формат.
+def to_hex(number: float) -> str:
+    # Проверяем число на минус
+    if '-' in str(number):
+        return '-' + make_hex(float(str(number)[1:]))
+    else:
+        return make_hex(number)
 
 
 # Проверка, можно ли представить число как степень десятки.
@@ -282,7 +293,6 @@ def decoder(b64):
 """ Классы """
 
 
-# Класс хэша
 class Hash:
     def __init__(self):
         self.string = []  # Список для хранения строк
@@ -291,7 +301,7 @@ class Hash:
     # Функция расшифровки
     def transcriber(self) -> bool | list:
         ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w']  # Константы для постановки знаков
-        RUSS_SYMBOLS = ['ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
+        RUSS_SYMBOLS = ['э', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
         unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
         result = []
 
@@ -322,14 +332,15 @@ class Hash:
                             symbol = symbol.lower()
                             # Проверка, что символ не шестнадцатеричной буквой
                             if 'a' <= symbol <= 'f':
-                                chars += symbol
+                                chars += symbol.upper()
                             else:
                                 # По языку определяем цифру
                                 if detect_language(symbol):
                                     chars += str(RUSS_SYMBOLS.index(symbol))
                                 else:
                                     chars += str(ENG_SYMBOLS.index(symbol))
-                        except ValueError:
+                        except ValueError as e:
+                            print(e, stroke, symbol)
                             return False
                     else:
                         chars += symbol
@@ -354,8 +365,11 @@ class Hash:
         if not self.string:
             return 'Error'
 
-        # Выдаём коэффиценты задачи
-        return self.string[num_of_test-1]
+        # Выдаём коэффициенты задачи
+        if num_of_test <= len(self.string):
+            return self.string[num_of_test-1]
+        else:
+            return 'Error'
 
     # Функция зашифровки чисел
     def string_for_show(self) -> list:
@@ -405,7 +419,7 @@ class Hash:
     def show(self):
         # 2 Шаг: Смена знаков
         ENG_SYMBOLS = 'ghijklmnopqrstuvw'  # Константы для постановки знаков
-        RUSS_SYMBOLS = 'ёжзийклмнопрстухч'
+        RUSS_SYMBOLS = 'эжзийклмнопрстухч'
 
         encoded_str = ''
         russ = True
@@ -441,13 +455,13 @@ class Hash:
                         # Если отрицательное число, то меняем его знак
                         if symbol == '-':
                             minus = True
-
-                        # Проверяем что число положительное или отрицательное
-                        if minus:
-                            encoded_str += symbol
                         else:
-                            encoded_str += symbol.upper()
-
+                            # Проверяем что число положительное или отрицательное
+                            if minus:
+                                encoded_str += symbol.lower()
+                            else:
+                                encoded_str += symbol.upper()
+                # Меняем язык
                 russ = not russ
 
         # Возвращаем зашифрованную строку
