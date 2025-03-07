@@ -29,6 +29,71 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
+def to_tenth(string: list[str]) -> list[str]:
+    unencrypted = []
+    # Проверяем каждое число на наличие символов
+    char = ''
+    factor = 0
+    for num in string:
+        # Проверяем число на символы, если их нет то просто переделываем число
+        if '-' in num:
+            # Добавляем минус в конечное расшифрованное число, а для расшифровки убираем его
+            char += '-'
+            num = num[1:]
+        if '*' in num:
+            # Указываем что есть множитель и убираем его на время
+            num = num.split('*')
+            factor = int(num[-1])
+            num = num[0]
+        if '.' in num:
+            # Расшифровываем дробное число
+            num = num.split('.')
+            num = str(int(num[0], 16)) + '.' + str(int(num[1], 16))
+            # Проверяем что нет множителя чтобы не переходить дальше
+            if not factor:
+                # Проверяем что нет минуса
+                if '-' in char:
+                    char += '-'
+                char += num
+                char += ' '
+                continue
+        if '^' in num:
+            # Возводим число в степень
+            num = num.split('^')
+            num = str(int(num[0])**int(num[1]))
+            # Проверяем что нет множителя чтобы не переходить дальше
+            if not factor:
+                # Проверяем что нет минуса
+                if '-' in char:
+                    char += '-'
+                char += num
+                char += ' '
+                continue
+        if factor:
+            # Добавляем числа по множителю
+            for ind in range(factor):
+                # Проверяем что нет минуса
+                if '-' in char and ind != 0:
+                    char += '-'
+                char += num
+                char += ' '
+            # Обнуляем множитель и переходим дальше
+            factor = 0
+            continue
+        if ' ,' == num:
+            # Переходи на следующую задачу
+            char += ' ,'
+            unencrypted.append(char)
+            char = ''
+        else:
+            # Если не прошло проверки, значит это обычное шестнадцатеричное число
+            char += str(int(num, 16))
+
+        char += ' '
+
+    return unencrypted
+
+
 # Функция разделения по языкам
 def split_by_language(input_str: str) -> list:
     result = []
@@ -252,6 +317,7 @@ def check_message(command, n, user_command=None, strict=False):
 """ Классы """
 
 
+# Класс для хэша
 class Hash:
     def __init__(self):
         self.string = []  # Список для хранения строк
@@ -307,9 +373,13 @@ class Hash:
                 # Добавляем шестнадцатеричное число в результат
                 result.append(chars)
 
+        # Обновляем значения строки
+        unencrypted_str = result
+
         print(result)
 
         # Возвращаем числа из шестнадцатеричной системы в десятеричную
+        unencrypted_str = to_tenth(unencrypted_str)
 
         # Возвращаем расшифрованную строку
         return unencrypted_str
@@ -326,7 +396,8 @@ class Hash:
 
         # Выдаём коэффициенты задачи
         if num_of_test <= len(self.string):
-            return self.string[num_of_test-1]
+            a = self.string[num_of_test-1].split()[:-1]
+            return self.string[num_of_test-1].split()[:-1]
         else:
             return 'Error'
 
