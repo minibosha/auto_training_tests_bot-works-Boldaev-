@@ -1,22 +1,14 @@
 """ Скачивание библиотек """
+import difflib
+import json
+import random
+import re
+from os import getenv
+
 # Создание и настройка бота
 import telebot
 from dotenv import load_dotenv
-from os import getenv
-
-import random
 from sympy import symbols, sympify
-
-import math
-
-import json
-
-import base64  # Библиотека для создания hash
-import re
-
-import difflib
-
-from telebot import TeleBot
 
 """ Подгрузка токена бота и его создание """
 load_dotenv()
@@ -25,73 +17,106 @@ token = getenv('token')
 # Создание бота
 Bot = telebot.TeleBot(token, parse_mode=None)
 
-
 """ Функции """
 
 
-def to_tenth(string: list[str]) -> list[str]:
-    unencrypted = []
-    # Проверяем каждое число на наличие символов
-    char = ''
-    factor = 0
-    for num in string:
-        # Проверяем число на символы, если их нет то просто переделываем число
-        if '-' in num:
-            # Добавляем минус в конечное расшифрованное число, а для расшифровки убираем его
-            char += '-'
-            num = num[1:]
-        if '*' in num:
-            # Указываем что есть множитель и убираем его на время
-            num = num.split('*')
-            factor = int(num[-1])
-            num = num[0]
-        if '.' in num:
-            # Расшифровываем дробное число
-            num = num.split('.')
-            num = str(int(num[0], 16)) + '.' + str(int(num[1], 16))
-            # Проверяем что нет множителя чтобы не переходить дальше
-            if not factor:
-                # Проверяем что нет минуса
-                if '-' in char:
-                    char += '-'
-                char += num
-                char += ' '
-                continue
-        if '^' in num:
-            # Возводим число в степень
-            num = num.split('^')
-            num = str(int(num[0])**int(num[1]))
-            # Проверяем что нет множителя чтобы не переходить дальше
-            if not factor:
-                # Проверяем что нет минуса
-                if '-' in char:
-                    char += '-'
-                char += num
-                char += ' '
-                continue
-        if factor:
-            # Добавляем числа по множителю
-            for ind in range(factor):
-                # Проверяем что нет минуса
-                if '-' in char and ind != 0:
-                    char += '-'
-                char += num
-                char += ' '
-            # Обнуляем множитель и переходим дальше
-            factor = 0
-            continue
-        if ' ,' == num:
-            # Переходи на следующую задачу
-            char += ' ,'
-            unencrypted.append(char)
-            char = ''
+# Проверка языка для расшифровки
+def detect_language(char):
+    return 'а' <= char.lower() <= 'я' or char == 'ё'
+
+
+# Проверка, что строка это число
+def is_number(string: str) -> bool:
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+
+
+# Функция переделывающая положительные числа в шестнадцатеричную систему
+def make_hex(number: float) -> str:
+    if number.is_integer():
+        return hex(int(number))[2:].upper()
+    else:
+        # Для дробных чисел преобразуем целую и дробную части отдельно
+        integer_part = int(number)
+        fractional_part = int(str(number).split('.')[-1])  # Ограничиваем дробную часть двумя знаками
+        return f"{hex(integer_part)[2:].upper()}.{hex(fractional_part)[2:].upper()}"
+
+
+# Функция, которая преобразует число в 16-ричный формат.
+def to_hex(number: float) -> str:
+    # Проверяем число на минус
+    if '-' in str(number):
+        return '-' + make_hex(float(str(number)[1:]))
+    else:
+        return make_hex(number)
+
+
+# Проверка, можно ли представить число как степень десятки.
+def is_power_of_ten(number: float) -> bool | None:
+    if number == 0:
+        return False
+    if number < 0:
+        number = abs(number)
+    if number < 1000:
+        return False
+    # Делим число на 10, пока оно не станет равным 1
+    while number != 1:
+        if number % 10 != 0:  # Если остаток от деления на 10 не равен 0
+            return False
+        number = number // 10  # Делим число на 10
+
+    return True
+
+
+# Функция сжимания числа, выбирая наиболее короткое представление.
+def compress_number(number: float) -> str:
+    hex_representation = to_hex(number)
+
+    # Проверяем, можно ли представить число как степень десятки
+    if is_power_of_ten(number):
+        if hex_representation[0] == '-':
+            power = len(str(int(number))[1:]) - 1
+            power_representation = f"-10^{power}"
         else:
-            # Если не прошло проверки, значит это обычное шестнадцатеричное число
-            char += str(int(num, 16))
+            power = len(str(int(number))[1:])
+            power_representation = f"10^{power}"
 
-        char += ' '
+        # Выбираем более короткое представление
+        if len(power_representation) < len(hex_representation):
+            return power_representation
 
-    return unencrypted
+    return hex_representation
+
+
+# Функция обработки строки с числами, разделенными знаком (например, '/' или '*').
+def process_numbers(input_str: str) -> str:
+    if '/' in input_str:
+        numbers = input_str.split('/')
+        separator = '/'
+    elif '*' in input_str:
+        numbers = input_str.split('*')
+        separator = '*'
+    else:
+        # Если нет разделителя, обрабатываем как одно число
+        return compress_number(float(input_str))
+
+    # Обрабатываем каждое число
+    compressed_numbers = []
+    for num in numbers:
+        compressed_numbers.append(compress_number(float(num)))
+
+    # Возвращаем сжатую строку с тем же разделителем
+    return separator.join(compressed_numbers)
+
+
+def counter():
+    count = 0
+    while True:
+        yield count
+        count += 1
 
 
 # Функция разделения по языкам
@@ -99,7 +124,7 @@ def split_by_language(input_str: str) -> list:
     result = []
     current_group = []
     current_lang = None  # Текущий язык ('rus' или 'eng')
-    has_lower = False    # Есть ли в группе символы в нижнем регистре
+    has_lower = False  # Есть ли в группе символы в нижнем регистре
 
     for char in input_str:
         if char.isalpha():
@@ -109,13 +134,12 @@ def split_by_language(input_str: str) -> list:
 
             # Если язык или регистр изменились, завершаем текущую группу
             if (lang != current_lang) or (is_lower != has_lower):
-                if not ('a' <= char.lower() <= 'f'):
-                    if current_group:
-                        # Добавляем группу с минусом, если есть символы в нижнем регистре
-                        result.append(('-' if has_lower else '') + ''.join(current_group))
-                        current_group = []
-                        has_lower = False
-                    current_lang = lang
+                if current_group:
+                    # Добавляем группу с минусом, если есть символы в нижнем регистре
+                    result.append(('-' if has_lower else '') + ''.join(current_group))
+                    current_group = []
+                    has_lower = False
+                current_lang = lang
 
             # Обновляем флаг нижнего регистра
             if is_lower:
@@ -155,91 +179,65 @@ def split_by_language(input_str: str) -> list:
     return merged_result
 
 
-# Проверка языка для расшифровки
-def detect_language(input_string):
-    # Проверяем, есть ли в строке русские буквы
-    for char in input_string:
-        if 'а' <= char <= 'я' or 'А' <= char <= 'Я':
-            return True
-    return False
+def to_tenth(string: list[str]) -> list[str]:
+    unencrypted = []
+    # Проверяем каждое число на наличие символов
+    char = ''
+    factor = 0
+    for index, num in enumerate(string):
+        minus = False
+        # Проверяем число на символы, если их нет то просто переделываем число
+        if '-' in num:
+            # Добавляем минус в конечное расшифрованное число, а для расшифровки убираем его
+            char += '-'
+            num = num[1:]
+            minus = True
+        if '*' in num:
+            # Указываем что есть множитель и убираем его на время
+            num = num.split('*')
+            factor = int(num[-1])
+            num = num[0]
+        if '.' in num:
+            # Расшифровываем дробное число
+            num = num.split('.')
+            num = str(int(num[0], 16)) + '.' + str(int(num[1], 16))
+            # Проверяем что нет множителя чтобы не переходить дальше
+            if not factor:
+                char += num
+                char += ' '
+                continue
+        if '^' in num:
+            # Возводим число в степень
+            num = num.split('^')
+            num = str(int(num[0]) ** int(num[1]))
+            # Проверяем что нет множителя чтобы не переходить дальше
+            if not factor:
+                char += num
+                char += ' '
+                continue
+        if factor:
+            # Добавляем числа по множителю
+            for ind in range(factor):
+                # Проверяем что нет минуса
+                if minus and ind != 0:
+                    char += '-'
+                char += num
+                char += ' '
+            # Обнуляем множитель и переходим дальше
+            factor = 0
+            continue
+        if ' ,' == num:
+            # Переходи на следующую задачу
+            char += ' ,'
+            unencrypted.append(char)
+            char = ''
+        else:
+            # Если не прошло проверки, значит это обычное шестнадцатеричное число
+            char += str(int(num, 16))
 
+        char += ' '
 
-# Проверка, что строка это число
-def is_number(string: str) -> bool:
-    try:
-        float(string)
-        return True
-    except ValueError:
-        return False
-
-
-# Функция переделывающая положительные числа в шестнадцатеричную систему
-def make_hex(number: float) -> str:
-    if number.is_integer():
-        return hex(int(number))[2:].upper()
-    else:
-        # Для дробных чисел преобразуем целую и дробную части отдельно
-        integer_part = int(number)
-        fractional_part = int(str(number).split('.')[-1])  # Ограничиваем дробную часть двумя знаками
-        return f"{hex(integer_part)[2:].upper()}.{hex(fractional_part)[2:].upper()}"
-
-
-# Функция, которая преобразует число в 16-ричный формат.
-def to_hex(number: float) -> str:
-    # Проверяем число на минус
-    if '-' in str(number):
-        return '-' + make_hex(float(str(number)[1:]))
-    else:
-        return make_hex(number)
-
-
-# Проверка, можно ли представить число как степень десятки.
-def is_power_of_ten(number: float) -> bool:
-    if number == 0:
-        return False
-    if number < 0:
-        number = abs(number)
-    if number >= 1000:
-        log10 = number ** (1 / 10)  # Проверяем, является ли число степенью 10
-        return log10.is_integer()
-
-
-# Функция сжимания числа, выбирая наиболее короткое представление.
-def compress_number(number: float) -> str:
-    hex_representation = to_hex(number)
-
-    # Проверяем, можно ли представить число как степень десятки
-    if is_power_of_ten(number):
-        print(number)
-        power = int(number ** (1 / 10))
-        power_representation = f"10^{power}"
-
-        # Выбираем более короткое представление
-        if len(power_representation) < len(hex_representation):
-            return power_representation
-
-    return hex_representation
-
-
-# Функция обработки строки с числами, разделенными знаком (например, '/' или '*').
-def process_numbers(input_str: str) -> str:
-    if '/' in input_str:
-        numbers = input_str.split('/')
-        separator = '/'
-    elif '*' in input_str:
-        numbers = input_str.split('*')
-        separator = '*'
-    else:
-        # Если нет разделителя, обрабатываем как одно число
-        return compress_number(float(input_str))
-
-    # Обрабатываем каждое число
-    compressed_numbers = []
-    for num in numbers:
-        compressed_numbers.append(compress_number(float(num)))
-
-    # Возвращаем сжатую строку с тем же разделителем
-    return separator.join(compressed_numbers)
+    return unencrypted
 
 
 # Нахождение топ-5 самых похожих слов по запросу
@@ -325,8 +323,10 @@ class Hash:
 
     # Функция расшифровки
     def transcriber(self) -> bool | list:
-        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w']  # Константы для постановки знаков
+        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                       'w']  # Константы для постановки знаков
         RUSS_SYMBOLS = ['э', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
+        HEX_RUSS = {'а': 'A', 'б': 'B', 'в': 'C', 'г': 'D', 'д': 'E', 'е': 'F'}
         unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
         result = []
 
@@ -358,6 +358,9 @@ class Hash:
                             # Проверка, что символ не шестнадцатеричной буквой
                             if 'a' <= symbol <= 'f':
                                 chars += symbol.upper()
+                            # Проверка, что это неизменённая шестнадцатеричная буква
+                            elif symbol in HEX_RUSS.keys():
+                                chars += HEX_RUSS[symbol]
                             else:
                                 # По языку определяем цифру
                                 if detect_language(symbol):
@@ -396,8 +399,7 @@ class Hash:
 
         # Выдаём коэффициенты задачи
         if num_of_test <= len(self.string):
-            a = self.string[num_of_test-1].split()[:-1]
-            return self.string[num_of_test-1].split()[:-1]
+            return self.string[num_of_test - 1].split()[:-1]
         else:
             return 'Error'
 
@@ -409,17 +411,19 @@ class Hash:
             # Разбиваем строку на числа и преобразуем их в список
             nums = list(map(float, nums.split()[:-1]))
 
-            # Создаем словарь для подсчета повторений
-            count_dict = {}
-            for number in nums:
-                if number in count_dict:
-                    count_dict[number] += 1
-                else:
-                    count_dict[number] = 1
-
-            # Формируем результат
+            # Формируем результат, проверяя повторы
+            index = 0
+            count = 0
             result = []
-            for number, count in count_dict.items():
+            while index <= len(nums) - 1:
+                number = nums[index]
+
+                # Находим повторы
+                while index <= len(nums) - 1 and number == nums[index]:
+                    count += 1
+                    index += 1
+
+                # Проверяем на повторы и добавляем в результат для изменения
                 if count >= 3:
                     if number.is_integer():
                         result.append(f"{int(number)}*{count}")
@@ -427,9 +431,12 @@ class Hash:
                         result.append(f"{number}*{count}")
                 else:
                     if number.is_integer():
-                        result.append(int(number))
+                        for _ in range(count):
+                            result.append(int(number))
                     else:
-                        result.append(number)
+                        for _ in range(count):
+                            result.append(number)
+                count = 0  # Обнуляем счётчик
 
             # Переделываем результат в строку для дальнейшего использования
             nums = result
@@ -450,6 +457,7 @@ class Hash:
         # 2 Шаг: Смена знаков
         ENG_SYMBOLS = 'ghijklmnopqrstuvw'  # Константы для постановки знаков
         RUSS_SYMBOLS = 'эжзийклмнопрстухч'
+        HEX_RUSS = {'A': 'а', 'B': 'б', 'C': 'в', 'D': 'г', 'E': 'д', 'F': 'е'}
 
         encoded_str = ''
         russ = True
@@ -474,13 +482,27 @@ class Hash:
                                 encoded_str += RUSS_SYMBOLS[int(symbol)]
                             else:
                                 encoded_str += ENG_SYMBOLS[int(symbol)]
-
                         else:
                             # Проверяем язык
                             if russ:
                                 encoded_str += RUSS_SYMBOLS[int(symbol)].upper()
                             else:
                                 encoded_str += ENG_SYMBOLS[int(symbol)].upper()
+                    # Проверяем что число шестнадцатеричное
+                    elif symbol in HEX_RUSS.keys():
+                        # Добавляем по языку
+                        if russ:
+                            # Проверяем положительное ли число
+                            if minus:
+                                encoded_str += HEX_RUSS[symbol].lower()
+                            else:
+                                encoded_str += HEX_RUSS[symbol].upper()
+                        else:
+                            # Проверяем положительное ли число
+                            if minus:
+                                encoded_str += symbol.lower()
+                            else:
+                                encoded_str += symbol.upper()
                     else:
                         # Если отрицательное число, то меняем его знак
                         if symbol == '-':
@@ -537,16 +559,22 @@ class Math:
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol = UserFormulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
-                    self.solve.append(UserFormulas.create_solve_txt(1, other, ['Находим дискриминант (можно решить Виета), т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
+                    self.solve.append(UserFormulas.create_solve_txt(1, other, [
+                        'Находим дискриминант (можно решить Виета), т.к. дискриминант больше нуля => 2 корня',
+                        'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
                 else:
-                    self.solve.append(UserFormulas.create_solve_txt(1, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
+                    self.solve.append(UserFormulas.create_solve_txt(1, other, [
+                        'Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'],
+                                                                    equations[:-1], answers))
 
                 # Добавляем ответ
                 equations = sorted(answers[1:])
@@ -556,21 +584,28 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+                self.tasks.append(
+                    f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
 
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol = UserFormulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
+                        'Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень',
+                        'Вычисляем второй корень'], equations, answers))
                 else:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
+                        'Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'],
+                                                                    equations[:-1], answers))
 
                 # Добавляем ответ
                 equations = sorted(answers[1:])
@@ -580,13 +615,16 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
+                self.tasks.append(
+                    f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
             case "сложение":
                 # Создаём три простых задачи и добавляем нужное по ним
-                self.solve.append('Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
+                self.solve.append(
+                    'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, normal_check=True, after_point=0)
+                    answers, symbol = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)},
+                                                                   normal_check=True, after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
@@ -599,10 +637,10 @@ class Math:
     # Сохранение ответа
     def add_answer(self, n: int, task: int, ans: str):
         if len(self.user_answers) != 0:
-            self.user_answers[task-1] = ans
+            self.user_answers[task - 1] = ans
         else:
             self.user_answers = [''] * n
-            self.user_answers[task-1] = ans
+            self.user_answers[task - 1] = ans
 
     # Выводим решение
     def show_solve(self):
@@ -616,7 +654,7 @@ class Math:
         ans = ''
         m = 0
         for ind in range(len(self.answers)):
-            ans += f'Задача №{ind+1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
+            ans += f'Задача №{ind + 1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
 
             # Вердикт
             if self.user_answers[ind] == self.answers[ind]:
@@ -626,7 +664,7 @@ class Math:
                 ans += 'Неправильно\n'
 
         # Результат
-        ans += f'Итог: {m}/{len(self.answers)} ({int(m/len(self.answers)*100)}%) правильных.'
+        ans += f'Итог: {m}/{len(self.answers)} ({int(m / len(self.answers) * 100)}%) правильных.'
 
         return ans
 
@@ -871,10 +909,13 @@ class Statistics:
 
 
 """ Команды бота и ответы на них """
+
+
 # Вывод при команде старт
 @Bot.message_handler(commands=['start'])
 def start(message):
-    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
+    Bot.send_message(message.chat.id,
+                     'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
 
 
 # Вывод информации для помощи пользователю
@@ -887,14 +928,16 @@ def help_for_user(message):
         ['/help', 'Выдаёт список всех команд чат-бота и как правильно вводить ответы на задачу.', '-'],
         ['/tests subject', 'просмотр тем тестов.',
          'subject - Выбор предмета из возможных (math, математика; physics, физика, phys)'],
-        ['/start_test name subject', 'начать решение теста.', 'name - Название теста или его номер; subject - Выбор предмета из возможных (math, математика; physics, физика, phys).'],
+        ['/start_test name subject', 'начать решение теста.',
+         'name - Название теста или его номер; subject - Выбор предмета из возможных (math, математика; physics, физика, phys).'],
         ['/test_statistics subject name	',
          'выводит статистику теста (Количество попыток, средний балл, лучший балл, баллы на первой попытке, баллы на последней попытке).',
          'name - Название теста или его номер; subject - Выбор предмета из возможных (math, математика; physics, физика, phys)'],
         ['/answer task answer или /an task answer', 'Дать ответ после начала решения.',
          'task - Номер задачи в тесте; answer - ответ на задачу (правила записи ответа выводятся при вводе команды /help).'],
         ['/end', 'заканчивает тест', '-', ],
-        ['/find subject name', 'Находит топ-5 похожих тестов по строке', 'subject - Выбор предмета из возможных (math, математика; physics, физика, phys); name - строка, по которой вы ищете тест']]
+        ['/find subject name', 'Находит топ-5 похожих тестов по строке',
+         'subject - Выбор предмета из возможных (math, математика; physics, физика, phys); name - строка, по которой вы ищете тест']]
 
     table_str = ""
     change = True
@@ -910,12 +953,14 @@ def help_for_user(message):
         table_str += '\n\n'
         change = True
 
-    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
+    Bot.send_message(message.chat.id,
+                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
 
     Bot.send_message(message.chat.id, 'Команды которые нужно посылать программе:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
 
-    Bot.send_message(message.chat.id, 'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
+    Bot.send_message(message.chat.id,
+                     'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
 
 # Вывод возможных тестов
@@ -955,7 +1000,8 @@ def next_tests(message):
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id, "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
+        Bot.send_message(message.chat.id,
+                         "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
@@ -1000,7 +1046,8 @@ def show_statistics(message):
 
         Bot.send_message(message.chat.id, statistics)
     else:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics subject name.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics subject name.\nКоманда для помощи: '/help'.")
 
 
 @Bot.message_handler(commands=['find'])
@@ -1009,7 +1056,8 @@ def find_similar(message):
     message_text = check_message(message, 3, user_command='/find')
 
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.")
         return False
 
     # Находим топ-5 похожих слов
@@ -1025,6 +1073,7 @@ def find_similar(message):
 # Функция для начала тестов
 user_tests = {}  # Словарь для сохранения тестов
 
+
 @Bot.message_handler(commands=['start_test'])
 def start_test(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
@@ -1032,7 +1081,8 @@ def start_test(message):
 
     # Проверяем что правильное сообщение
     if isinstance(message_text, bool) or len(message_text) == 1:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.")
         return False
 
     # Проверяем что есть такой тест по его названию или индексу
@@ -1102,7 +1152,9 @@ def check_for_solve(message):
         create_test(message, False)
 
 
-noth = [0] # Массив для сохранения проверки
+noth = [0]  # Массив для сохранения проверки
+
+
 def create_test(message, need_solve):
     # Добавляем класс теста к человеку
     user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve)
@@ -1111,7 +1163,8 @@ def create_test(message, need_solve):
     user_tests[message.chat.id].create_test()
 
     # Выводим правила ввода ответов
-    Bot.send_message(message.chat.id, 'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
+    Bot.send_message(message.chat.id,
+                     'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
     # Выводим тест
     tasks_txt, noth[0] = user_tests[message.chat.id].show_test()
@@ -1141,7 +1194,8 @@ def save_answers(message):
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     elif isinstance(message_text[0], int):
-        Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+        Bot.send_message(message.chat.id,
+                         "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     elif int(message_text[0]) <= int(noth[0]):
@@ -1150,7 +1204,8 @@ def save_answers(message):
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     else:
-        Bot.send_message(message.chat.id, "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+        Bot.send_message(message.chat.id,
+                         "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
 
@@ -1170,7 +1225,8 @@ def show_results(message):
         Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers())
 
         # Выводим статистику
-        Statistics.add_statistics(user_tests[message.chat.id].get_point(), 'math', message.chat.id, user_tests[message.chat.id].name_test)
+        Statistics.add_statistics(user_tests[message.chat.id].get_point(), 'math', message.chat.id,
+                                  user_tests[message.chat.id].name_test)
 
     # Удаляем человека из памяти
     del user_tests[message.chat.id]
@@ -1180,13 +1236,16 @@ def show_results(message):
 
 # testiki
 taps = {}
+
+
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
     chat_id = str(message.chat.id)
     taps_count = taps.get(chat_id, -1)
 
     if taps_count == -1:
-        Bot.send_message(message.chat.id, 'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
+        Bot.send_message(message.chat.id,
+                         'Нам запретили тапать хомяка, так что я сделал его пародию. Напишите "тап", чтобы начать!')
         taps[chat_id] = 0  # Инициализируем счетчик тапов
         Bot.register_next_step_handler(message, nothing)
     else:
