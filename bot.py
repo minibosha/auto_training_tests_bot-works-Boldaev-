@@ -379,8 +379,6 @@ class Hash:
         # Обновляем значения строки
         unencrypted_str = result
 
-        print(result)
-
         # Возвращаем числа из шестнадцатеричной системы в десятеричную
         unencrypted_str = to_tenth(unencrypted_str)
 
