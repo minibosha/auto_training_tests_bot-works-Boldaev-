@@ -531,9 +531,10 @@ class Hash:
 
 # Класс для тестов по математике
 class Math:
-    def __init__(self, name_test, need_solve):
+    def __init__(self, name_test, need_solve, user_hash):
         # Данные пользователя
         self.user_answers: list[str] = []
+        self.user_hash: str = user_hash
 
         # Данные для компьютера
         self.tasks: list[str] = []  # Задачи
@@ -557,9 +558,7 @@ class Math:
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(
-                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
-                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -582,15 +581,12 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(
-                    f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
 
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(
-                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
-                    {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -1113,7 +1109,7 @@ def check_for_start(message):
         Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Тест не начался.')
+        Bot.send_message(message.chat.id, 'Тест не начался.\nВы хотите получить решение? (да/нет; yes/no; y/n)')
         del user_tests[message.chat.id]
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
@@ -1123,21 +1119,97 @@ def check_for_start(message):
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
+        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nВы хотите получить решение? (да/нет; yes/no; y/n)')
         del user_tests[message.chat.id]
 
 
+# Данные которые нужны для создания теста
+need_for_create_solve = False
+user_hash = ''
+
+
 def check_for_solve(message):
+    # Подключаем глобальные переменные
+    global need_for_create_solve
+    global user_hash
+
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
-        Bot.send_message(message.chat.id, 'Тест начат.\nНачалось создание теста...')
-        create_test(message, True)
+        need_for_create_solve = True
+        Bot.send_message(message.chat.id, 'Хорошо, мы сделаем решение.\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Решение теста не будет')
-        create_test(message, False)
+        Bot.send_message(message.chat.id, 'Решение теста не будет.\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.register_next_step_handler(message, get_hash_and_start_test)
+    elif message_text[0] == '/end':
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        del user_tests[message.chat.id]
+
+        # Очищаем следующий шаг
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        return True
+    else:
+        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.register_next_step_handler(message, get_hash_and_start_test)
+
+
+def ask_for_hash(message):
+    # Подключаем глобальные переменные
+    global need_for_create_solve
+    global user_hash
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Проверяем ответ
+    if message_text[0] in ('да', 'yes', 'y'):
+        need_for_create_solve = True
+        Bot.send_message(message.chat.id, 'Введите hash.')
+        Bot.register_next_step_handler(message, get_hash)
+    elif message_text[0] in ('нет', 'no', 'n'):
+        Bot.register_next_step_handler(message, get_hash_and_start_test)
+    elif message_text[0] == '/end':
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        del user_tests[message.chat.id]
+
+        # Очищаем следующий шаг
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        return True
+    else:
+        Bot.register_next_step_handler(message, get_hash_and_start_test)
+
+
+def get_hash(message):
+    # Подключаем глобальные переменные
+    global need_for_create_solve
+    global user_hash
+
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Сохраняем hash
+    user_hash = message_text[0]
+
+    get_hash_and_start_test(message)
+    
+
+def get_hash_and_start_test(message):
+    # Подключаем глобальные переменные
+    global need_for_create_solve
+    global user_hash
+
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Проверяем ответ
+    if user_hash:
+        Bot.send_message(message.chat.id, 'Тест начат, ваш хэш принят.\nНачалось создание теста...')
+        create_test(message, need_for_create_solve, user_hash=user_hash)
+    elif message_text[0] in ('нет', 'no', 'n'):
+        Bot.send_message(message.chat.id, 'Началось создание теста...')
+        create_test(message, need_for_create_solve)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
         del user_tests[message.chat.id]
@@ -1147,15 +1219,15 @@ def check_for_solve(message):
         return True
     else:
         Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".')
-        create_test(message, False)
+        create_test(message, need_for_create_solve)
 
 
 noth = [0]  # Массив для сохранения проверки
 
 
-def create_test(message, need_solve):
+def create_test(message, need_solve: bool, user_hash=''):
     # Добавляем класс теста к человеку
-    user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve)
+    user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve, user_hash)
 
     # Создаём тест
     user_tests[message.chat.id].create_test()
