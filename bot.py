@@ -540,6 +540,7 @@ class Math:
         self.tasks: list[str] = []  # Задачи
         self.solve: list[str] = []  # Решения на задачи
         self.answers: list[str] = []  # Ответы на задачи
+        self.program_hash: str = ''
 
         self.name_test: str = name_test
         self.need_solve: bool = need_solve
@@ -558,7 +559,7 @@ class Math:
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol, self.user_hash = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, 1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -586,7 +587,7 @@ class Math:
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol, self.user_hash = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, 2, self.user_hash, self.program_hash, normal_check=True, after_point=0, exception = ('-1', '0', '1'), not_in_exc=('D',))
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -617,8 +618,7 @@ class Math:
                     'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)},
-                                                                   normal_check=True, after_point=0)
+                    answers, symbol, self.user_hash = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, ind+1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
@@ -707,11 +707,12 @@ class UserFormulas:
 
     # Функция для вычисления уравнений
     @staticmethod
-    def equation_solver(eqs, ranges, normal_check=False, after_point=4, round_check=False):
+    def equation_solver(eqs, ranges, num_of_test, user_hash, program_hash, normal_check=False, after_point=4, round_check=False, exception: tuple[str]=(), not_in_exc: tuple[str] = ()):   # м.б сделать встроенный счётчик вместо num_of_test. Или автоматически отдавать user_hash и program_hash
         while True:
             # Создание нужных ячеек памяти
             results = []
             numbers = {}
+            add_hash = ''
 
             # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
             for _ in range(1000000):
@@ -732,6 +733,12 @@ class UserFormulas:
                 # Создаём рандомные числа
                 for ind, obj in enumerate(ranges.keys()):
                     numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
+
+                # Если есть hash, то заменяем числа, на хэшированые
+                if user_hash:
+                    user_hash = Hash.read(num_of_test, user_hash)  # Лучше подавать сразу расшифрованную строку на случай, чтобы не делать перевода и проверок
+                elif program_hash or program_hash == '':
+                    pass  # Добавляем значения шифруя их
 
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
@@ -761,6 +768,18 @@ class UserFormulas:
                     except TypeError:
                         results.clear()
 
+                # Проверяем, что коэффициенты не в исключении и это не коэффициент который в него не попадает
+                if exception:
+                    num_for_exs = []
+                    for exc in numbers:
+                        if exc in not_in_exc:
+                            pass
+                        else:
+                            num_for_exs.append(numbers.get(exc))
+                    for number in num_for_exs:
+                        if number in exception:
+                            continue
+
                 # Округляем числа если это нужно
                 if round_check:
                     results = UserFormulas.round_nums(results, after_point)
@@ -769,11 +788,11 @@ class UserFormulas:
                 if normal_check:
                     if len(results) == len(equations):
                         if UserFormulas.normal(results, after_point):
-                            return results, numbers
+                            return results, numbers, add_hash
                 else:
                     if any(results):
                         print(results)
-                        return results, numbers
+                        return results, numbers, add_hash
 
                 # Удаляем результаты
                 results.clear()
@@ -1169,7 +1188,7 @@ def ask_for_hash(message):
         Bot.send_message(message.chat.id, 'Введите hash.')
         Bot.register_next_step_handler(message, get_hash)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.register_next_step_handler(message, get_hash_and_start_test)
+        get_hash_and_start_test(message)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
         del user_tests[message.chat.id]
@@ -1178,7 +1197,7 @@ def ask_for_hash(message):
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.register_next_step_handler(message, get_hash_and_start_test)
+        get_hash_and_start_test(message)
 
 
 def get_hash(message):
