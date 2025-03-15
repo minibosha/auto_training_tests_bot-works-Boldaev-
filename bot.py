@@ -283,11 +283,12 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n, user_command=None, strict=False):
+def check_message(command, n, user_command=None, strict=False, none_lower=False):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     user_object = user_object.replace('.', '')
-    user_object = user_object.lower()
+    if none_lower:
+        user_object = user_object.lower()
 
     # Разграничиваем текст
     txt = user_object.split()
@@ -385,7 +386,7 @@ class Hash:
         # Возвращаем расшифрованную строку
         return unencrypted_str
 
-    def read(self, num_of_test, hash_str: str):
+    def read(self, hash_str: str):
         # Расшифровываем hash, если этого не делали
         if not self.string:
             self.encrypted = hash_str
@@ -396,10 +397,7 @@ class Hash:
             return 'Error'
 
         # Выдаём коэффициенты задачи
-        if num_of_test <= len(self.string):
-            return self.string[num_of_test - 1].split()[:-1]
-        else:
-            return 'Error'
+        return self.string
 
     # Функция зашифровки чисел
     def string_for_show(self) -> list:
@@ -534,13 +532,30 @@ class Math:
     def __init__(self, name_test, need_solve, user_hash):
         # Данные пользователя
         self.user_answers: list[str] = []
-        self.user_hash: str = user_hash
+        self.user_hash = Hash()
+        # Если hash есть, то создаём расшифрованный объект hash-a
+        print(self.user_hash)
+        if user_hash:
+            try:
+                print(self.user_hash)
+                self.user_hash = self.user_hash.read(user_hash)
+                for ind, text_of_test in enumerate(list(self.user_hash)):
+                    print(self.user_hash)
+                    if 'Error' in text_of_test:
+                        self.user_hash = ''
+                        break
+                    else:
+                        if ',' in text_of_test:
+                            self.user_hash[ind] = text_of_test[:-3]
+            except:
+                self.user_hash = ''
+        print(self.user_hash)
 
         # Данные для компьютера
         self.tasks: list[str] = []  # Задачи
         self.solve: list[str] = []  # Решения на задачи
         self.answers: list[str] = []  # Ответы на задачи
-        self.program_hash: str = ''
+        self.program_hash = Hash()
 
         self.name_test: str = name_test
         self.need_solve: bool = need_solve
@@ -559,7 +574,10 @@ class Math:
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol, self.user_hash = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, 1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
+                answers, symbol, self.user_hash = UserFormulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, 1, self.user_hash, self.program_hash,
+                    normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -582,12 +600,16 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+                self.tasks.append(
+                    f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
 
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol, self.user_hash = UserFormulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, 2, self.user_hash, self.program_hash, normal_check=True, after_point=0, exception = ('-1', '0', '1'), not_in_exc=('D',))
+                answers, symbol, self.user_hash = UserFormulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, 2, self.user_hash, self.program_hash,
+                    normal_check=True, after_point=0, exception=('-1', '0', '1'), not_in_exc=('D',))
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -618,7 +640,11 @@ class Math:
                     'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol, self.user_hash = UserFormulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, ind+1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
+                    answers, symbol, self.user_hash = UserFormulas.equation_solver(['a + b'],
+                                                                                   {'a': (0, 100), 'b': (0, 100)},
+                                                                                   ind + 1, self.user_hash,
+                                                                                   self.program_hash, normal_check=True,
+                                                                                   after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
@@ -707,7 +733,8 @@ class UserFormulas:
 
     # Функция для вычисления уравнений
     @staticmethod
-    def equation_solver(eqs, ranges, num_of_test, user_hash, program_hash, normal_check=False, after_point=4, round_check=False, exception: tuple[str]=(), not_in_exc: tuple[str] = ()):   # м.б сделать встроенный счётчик вместо num_of_test. Или автоматически отдавать user_hash и program_hash
+    def equation_solver(eqs, ranges, num_of_test, user_hash, program_hash, normal_check=False, after_point=4, round_check=False, exception: tuple[str] = (), not_in_exc: tuple[
+                str] = ()):  # м.б сделать встроенный счётчик вместо num_of_test. Или автоматически отдавать user_hash и program_hash
         while True:
             # Создание нужных ячеек памяти
             results = []
@@ -736,7 +763,8 @@ class UserFormulas:
 
                 # Если есть hash, то заменяем числа, на хэшированые
                 if user_hash:
-                    user_hash = Hash.read(num_of_test, user_hash)  # Лучше подавать сразу расшифрованную строку на случай, чтобы не делать перевода и проверок
+                    user_hash = Hash.read(num_of_test,
+                                          user_hash)  # Лучше подавать сразу расшифрованную строку на случай, чтобы не делать перевода и проверок
                 elif program_hash or program_hash == '':
                     pass  # Добавляем значения шифруя их
 
@@ -1138,7 +1166,8 @@ def check_for_start(message):
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nВы хотите получить решение? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id,
+                         'Некорректный ввод, будет считаться что вы ввели "нет".\nВы хотите получить решение? (да/нет; yes/no; y/n)')
         del user_tests[message.chat.id]
 
 
@@ -1171,7 +1200,8 @@ def check_for_solve(message):
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id,
+                         'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, get_hash_and_start_test)
 
 
@@ -1206,13 +1236,13 @@ def get_hash(message):
     global user_hash
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = check_message(message, 1, strict=True, none_lower=False)
 
     # Сохраняем hash
     user_hash = message_text[0]
 
     get_hash_and_start_test(message)
-    
+
 
 def get_hash_and_start_test(message):
     # Подключаем глобальные переменные
