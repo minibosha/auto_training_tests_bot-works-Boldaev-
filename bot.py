@@ -568,16 +568,16 @@ class Math:
         symbol = []
         other = []
 
+        # Создаём класс UserFormulas с хэшом
+        User_formulas = UserFormulas(self.user_hash)
+
         # Создаём тест
         match self.name_test:
             case 'полные квадратные уравнения':
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol, self.user_hash = UserFormulas.equation_solver(
-                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
-                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, 1, self.user_hash, self.program_hash,
-                    normal_check=True, after_point=0)
+                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -600,29 +600,21 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(
-                    f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
 
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol, self.user_hash = UserFormulas.equation_solver(
-                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
-                    {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, 2, self.user_hash, self.program_hash,
-                    normal_check=True, after_point=0, exception=('-1', '0', '1'), not_in_exc=('D',))
+                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=('-1', '0', '1'), not_in_exc=('D',))
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
-                        'Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень',
-                        'Вычисляем второй корень'], equations, answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
                 else:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
-                        'Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'],
-                                                                    equations[:-1], answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
 
                 # Добавляем ответ
                 equations = sorted(answers[1:])
@@ -632,23 +624,24 @@ class Math:
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(
-                    f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
+                self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
             case "сложение":
                 # Создаём три простых задачи и добавляем нужное по ним
-                self.solve.append(
-                    'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
+                self.solve.append('Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol, self.user_hash = UserFormulas.equation_solver(['a + b'],
-                                                                                   {'a': (0, 100), 'b': (0, 100)},
-                                                                                   ind + 1, self.user_hash,
-                                                                                   self.program_hash, normal_check=True,
-                                                                                   after_point=0)
+                    answers, symbol = User_formulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, ind + 1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
                 self.tasks.append(f'Решите три примера:\n1. {equations[0]}\n2. {equations[1]}\n3. {equations[2]}')
+
+        # Получаем hash
+        self.program_hash = self.program_hash.show(User_formulas.get_nums())
+
+    # Выводим hash
+    def show_hash(self):
+        return self.program_hash
 
     # Вывод номеров теста
     def show_test(self):
@@ -700,46 +693,16 @@ class Math:
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
-    # Проверка, что у чисел не больше after_point знаков после запятой
-    @staticmethod
-    def normal(nums, after_point):
-        # Регулярное выражение для проверки числа с не более чем n цифрами после запятой
-        if after_point == 0:
-            pattern = False
-        else:
-            pattern = r'^\d+(\.\d{1,' + str(after_point) + '})?$'
-
-        # Проверяем все числа на нормальность
-        res = []
-        if pattern:
-            for num in nums:
-                num = abs(num)
-                res.append(bool(re.match(pattern, str(num))))
-        else:
-            for num in nums:
-                res.append(num.is_integer())
-
-        # Выводим ответ после проверки всех чисел
-        return all(res)
-
-    # Округление числа до указанного значения
-    @staticmethod
-    def round_nums(nums, digits):
-        res = []
-        for num in nums:
-            res.append(round(num, digits))
-
-        return res
+    def __init__(self, user_nums):
+        self.program_nums = ''
+        self.user_nums = user_nums  # Числа, который нужны при создании тестов, от пользователя
 
     # Функция для вычисления уравнений
-    @staticmethod
-    def equation_solver(eqs, ranges, num_of_test, user_hash, program_hash, normal_check=False, after_point=4, round_check=False, exception: tuple[str] = (), not_in_exc: tuple[
-                str] = ()):  # м.б сделать встроенный счётчик вместо num_of_test. Или автоматически отдавать user_hash и program_hash
+    def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False, exception: tuple[str] = (), not_in_exc: tuple[str] = ()):
         while True:
             # Создание нужных ячеек памяти
             results = []
             numbers = {}
-            add_hash = ''
 
             # Пытаемся рандомно подобрать значение, но если много операций то переходим дальше
             for _ in range(1000000):
@@ -760,13 +723,6 @@ class UserFormulas:
                 # Создаём рандомные числа
                 for ind, obj in enumerate(ranges.keys()):
                     numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
-
-                # Если есть hash, то заменяем числа, на хэшированые
-                if user_hash:
-                    user_hash = Hash.read(num_of_test,
-                                          user_hash)  # Лучше подавать сразу расшифрованную строку на случай, чтобы не делать перевода и проверок
-                elif program_hash or program_hash == '':
-                    pass  # Добавляем значения шифруя их
 
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
@@ -816,14 +772,49 @@ class UserFormulas:
                 if normal_check:
                     if len(results) == len(equations):
                         if UserFormulas.normal(results, after_point):
-                            return results, numbers, add_hash
+                            return results, numbers
                 else:
                     if any(results):
                         print(results)
-                        return results, numbers, add_hash
+                        return results, numbers
 
                 # Удаляем результаты
                 results.clear()
+
+    # Функция для получения hash-a
+    def get_nums(self):
+        return self.program_nums
+
+    # Проверка, что у чисел не больше after_point знаков после запятой
+    @staticmethod
+    def normal(nums, after_point):
+        # Регулярное выражение для проверки числа с не более чем n цифрами после запятой
+        if after_point == 0:
+            pattern = False
+        else:
+            pattern = r'^\d+(\.\d{1,' + str(after_point) + '})?$'
+
+        # Проверяем все числа на нормальность
+        res = []
+        if pattern:
+            for num in nums:
+                num = abs(num)
+                res.append(bool(re.match(pattern, str(num))))
+        else:
+            for num in nums:
+                res.append(num.is_integer())
+
+        # Выводим ответ после проверки всех чисел
+        return all(res)
+
+    # Округление числа до указанного значения
+    @staticmethod
+    def round_nums(nums, digits):
+        res = []
+        for num in nums:
+            res.append(round(num, digits))
+
+        return res
 
     # Функция заменяющая все символы на цифры в уравнении
     @staticmethod
@@ -1167,7 +1158,7 @@ def check_for_start(message):
         return True
     else:
         Bot.send_message(message.chat.id,
-                         'Некорректный ввод, будет считаться что вы ввели "нет".\nВы хотите получить решение? (да/нет; yes/no; y/n)')
+                         'Некорректный ввод, будет считаться что вы ввели "нет".')
         del user_tests[message.chat.id]
 
 
