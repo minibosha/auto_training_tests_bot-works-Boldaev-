@@ -542,13 +542,15 @@ class Math:
                 for ind, text_of_test in enumerate(list(self.user_hash)):
                     print(self.user_hash)
                     if 'Error' in text_of_test:
-                        self.user_hash = ''
+                        self.user_hash = []
                         break
                     else:
                         if ',' in text_of_test:
                             self.user_hash[ind] = text_of_test[:-3]
-            except:
-                self.user_hash = ''
+            except (TypeError, ValueError):
+                self.user_hash = []
+        else:
+            self.user_hash = []
         print(self.user_hash)
 
         # Данные для компьютера
@@ -605,7 +607,7 @@ class Math:
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=('-1', '0', '1'), not_in_exc=('D',))
+                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=['-1', '0', '1'], not_in_exc=('D',))
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -630,14 +632,15 @@ class Math:
                 self.solve.append('Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol = User_formulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, ind + 1, self.user_hash, self.program_hash, normal_check=True, after_point=0)
+                    answers, symbol = User_formulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, normal_check=True, after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
                 self.tasks.append(f'Решите три примера:\n1. {equations[0]}\n2. {equations[1]}\n3. {equations[2]}')
 
         # Получаем hash
-        self.program_hash = self.program_hash.show(User_formulas.get_nums())
+        self.program_hash = User_formulas.get_hash()
+        print(self.program_hash)
 
     # Выводим hash
     def show_hash(self):
@@ -693,12 +696,12 @@ class Math:
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
-    def __init__(self, user_nums):
-        self.program_nums = ''
+    def __init__(self, user_nums: list):
+        self.program_hash = Hash()
         self.user_nums = user_nums  # Числа, который нужны при создании тестов, от пользователя
 
     # Функция для вычисления уравнений
-    def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False, exception: tuple[str] = (), not_in_exc: tuple[str] = ()):
+    def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False, exception: list[str] = (), not_in_exc: list[str] = ()):
         while True:
             # Создание нужных ячеек памяти
             results = []
@@ -723,6 +726,18 @@ class UserFormulas:
                 # Создаём рандомные числа
                 for ind, obj in enumerate(ranges.keys()):
                     numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
+
+                # Проверяем расшифровку hash от пользователя
+                if self.user_nums:
+                    if len(numbers) == len(self.user_nums[0].split()):
+                        for ind, num in enumerate(self.user_nums[0].split()):
+                            if num not in range(ranges.values()[ind]):
+                                self.user_nums = ''
+                                continue
+                        numbers = self.user_nums[0].split()
+                    else:
+                        self.user_nums = ''
+                        continue
 
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
@@ -772,18 +787,29 @@ class UserFormulas:
                 if normal_check:
                     if len(results) == len(equations):
                         if UserFormulas.normal(results, after_point):
+                            # Сохраняем числа для hash.
+                            self.program_hash.add(list(map(int, numbers.values())))
+                            if self.user_nums:
+                                self.user_nums = self.user_nums[1:]
+
+                            # Возвращаем результат
                             return results, numbers
                 else:
                     if any(results):
-                        print(results)
+                        # Сохраняем числа для hash.
+                        self.program_hash.add(list(map(int, numbers.values())))
+                        if self.user_nums:
+                            self.user_nums = self.user_nums[1:]
+
+                        # Возвращаем результат
                         return results, numbers
 
                 # Удаляем результаты
                 results.clear()
 
     # Функция для получения hash-a
-    def get_nums(self):
-        return self.program_nums
+    def get_hash(self):
+        return self.program_hash.show()
 
     # Проверка, что у чисел не больше after_point знаков после запятой
     @staticmethod
