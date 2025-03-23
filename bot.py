@@ -1204,14 +1204,15 @@ def start_test(message):
 
 def check_for_start(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = []
+    message_text += check_message(message, 1, strict=True)
 
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
         Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Тест не начался.\nВы хотите получить решение? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id, 'Тест не начался.')
         del user_tests[message.chat.id]
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
@@ -1237,7 +1238,8 @@ def check_for_solve(message):
     global user_hash
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = []
+    message_text += check_message(message, 1, strict=True)
 
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
@@ -1246,7 +1248,7 @@ def check_for_solve(message):
         Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] in ('нет', 'no', 'n'):
         Bot.send_message(message.chat.id, 'Решение теста не будет.\nУ вас есть хэш? (да/нет; yes/no; y/n)')
-        Bot.register_next_step_handler(message, get_hash_and_start_test)
+        Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.')
         del user_tests[message.chat.id]
@@ -1265,7 +1267,8 @@ def ask_for_hash(message):
     global need_for_create_solve
     global user_hash
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = []
+    message_text += check_message(message, 1, strict=True)
 
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
@@ -1291,7 +1294,8 @@ def get_hash(message):
     global user_hash
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True, none_lower=False)
+    message_text = []
+    message_text += check_message(message, 1, strict=True, none_lower=False)
 
     # Сохраняем hash
     if message_text:
@@ -1311,7 +1315,6 @@ def get_hash_and_start_test(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = []
     message_text += check_message(message, 1, strict=True)
-    print(message_text)
 
     # Проверяем ответ
     if user_hash:
