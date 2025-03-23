@@ -20,6 +20,21 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 """ Функции """
 
 
+# Обновляет значения в словарях dict1 и dict2 на основе массива array.
+def update_dicts_with_array(dict1: dict, array: list):
+    index = 0  # Индекс для перебора массива
+
+    # Обновляем первый словарь
+    for key in dict1:
+        if index < len(array):
+            dict1[key] = array[index]
+            index += 1
+        else:
+            break  # Если массив закончился, выходим
+
+    return dict1
+
+
 # Проверка языка для расшифровки
 def detect_language(char):
     return 'а' <= char.lower() <= 'я' or char == 'ё'
@@ -727,18 +742,40 @@ class UserFormulas:
                 for ind, obj in enumerate(ranges.keys()):
                     numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
 
+                print(numbers, self.user_nums)
                 # Проверяем расшифровку hash от пользователя
                 if self.user_nums:
-                    if len(numbers) == len(self.user_nums[0].split()):
-                        for ind, num in enumerate(self.user_nums[0].split()):
-                            if num not in range(ranges.values()[ind]):
+                    user_numbers = self.user_nums[0].split()  # Разделяем числа пользователя
+                    if len(numbers) + len(dop_vars) == len(user_numbers):
+                        for ind, num in enumerate(user_numbers):
+                            # Проверяем, что индекс не выходит за пределы ranges
+                            if ind > len(ranges):
+                                print(f"Ошибка: индекс {ind} выходит за пределы ranges.")
                                 self.user_nums = ''
+                                break
+
+                            # Проверяем, является ли num числом
+                            try:
+                                num = int(num)  # Пробуем преобразовать в число
+                            except ValueError:
+                                # Если num не является числом, пропускаем проверку диапазона
                                 continue
-                        numbers = self.user_nums[0].split()
+
+                            # Получаем диапазон и проверяем число
+                            range_values = list(ranges.values())
+                            if ind < len(range_values):
+                                start, stop = range_values[ind]
+                                print(ranges.values(), start, stop + 1, list(range(start, stop + 1)), num, num not in range(start, stop + 1))  # Добавляем 1 к stop
+                                if num not in range(start, stop + 1):  # Включаем верхнюю границу
+                                    self.user_nums = ''
+                                    break
+                        # Если все числа прошли проверку, обновляем numbers и dop_vars
+                        numbers = update_dicts_with_array(numbers, user_numbers)
                     else:
                         self.user_nums = ''
                         continue
 
+                print(numbers, dop_vars)
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
                 symbols_list.extend(list(dop_vars.values()))  # Добавляем доп. переменные
@@ -847,6 +884,8 @@ class UserFormulas:
     def show_task_eq(equation, **symbol):
         # Заменяем указатели на значения из symbols
         for key, value in symbol.items():
+            # Делаем значение - числом
+            value = int(value)
             # Определяем знак для значения
             sign = '+' if value >= 0 else '-'
             # Форматируем строку с пробелом перед знаком
@@ -1011,8 +1050,7 @@ def help_for_user(message):
         table_str += '\n\n'
         change = True
 
-    Bot.send_message(message.chat.id,
-                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
+    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
 
     Bot.send_message(message.chat.id, 'Команды которые нужно посылать программе:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
@@ -1256,7 +1294,11 @@ def get_hash(message):
     message_text = check_message(message, 1, strict=True, none_lower=False)
 
     # Сохраняем hash
-    user_hash = message_text[0]
+    if message_text:
+        user_hash = message_text[0]
+    else:
+        user_hash = []
+    print(message_text, user_hash)
 
     get_hash_and_start_test(message)
 
@@ -1267,7 +1309,9 @@ def get_hash_and_start_test(message):
     global user_hash
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = []
+    message_text += check_message(message, 1, strict=True)
+    print(message_text)
 
     # Проверяем ответ
     if user_hash:
@@ -1298,9 +1342,11 @@ def create_test(message, need_solve: bool, user_hash=''):
     # Создаём тест
     user_tests[message.chat.id].create_test()
 
+    # Выводим hash
+    Bot.send_message(message.chat.id, f'Hash для повторного прохождения теста: {user_tests[message.chat.id].show_hash()}')
+
     # Выводим правила ввода ответов
-    Bot.send_message(message.chat.id,
-                     'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
+    Bot.send_message(message.chat.id, 'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
     # Выводим тест
     tasks_txt, noth[0] = user_tests[message.chat.id].show_test()
