@@ -1112,13 +1112,14 @@ def get_subject_and_show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
     user_message = check_message(message, 1, strict=True)
 
-    # Проверка, что предметы в нужном диапазоне
-    if user_message[0] not in SUBJECTS:
-        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
-        return False
-
     # Проверка, что сообщение правильное
     if not isinstance(user_message, bool):
+
+        # Проверка, что предметы в нужном диапазоне
+        if user_message[0] not in SUBJECTS:
+            Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+            return False
+
         user_answer = Statistics.get_tests(user_message)
     else:
         user_answer = 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".'
@@ -1182,15 +1183,15 @@ def get_subject_for_show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
-    # Проверка, что предметы в нужном диапазоне
-    if message_text[0] not in SUBJECTS:
-        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
-        return False
-
     if message_text:
         Bot.send_message(message.chat.id, 'Введите номер или название теста', reply_markup=telebot.types.ReplyKeyboardRemove())
     else:
         Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    # Проверка, что предметы в нужном диапазоне
+    if message_text[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return False
 
     Bot.register_next_step_handler(message, get_index_of_test_for_show_statistics, message_text)
@@ -1245,14 +1246,14 @@ def get_subject_to_find_similar(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
-    # Проверка, что предметы в нужном диапазоне
-    if message_text[0] not in SUBJECTS:
-        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
-        return False
-
     # Проверяем что правильный вывод
     if isinstance(message_text, bool):
         Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    # Проверка, что предметы в нужном диапазоне
+    if message_text[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return False
 
     # Спрашиваем текст
