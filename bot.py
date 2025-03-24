@@ -7,6 +7,7 @@ from os import getenv
 
 # Создание и настройка бота
 import telebot
+from telebot import types # для создания кнопок
 from dotenv import load_dotenv
 from sympy import symbols, sympify
 
@@ -18,6 +19,20 @@ token = getenv('token')
 Bot = telebot.TeleBot(token, parse_mode=None)
 
 """ Функции """
+
+
+# Функция, для создания шаблонных кнопок
+def easy_markup(*args):
+    # Создание кнопок команд (для обычных задач)
+    # Создание объекта кнопок
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    # Добавление кнопок
+    for btn in args:
+        markup.add(types.KeyboardButton(btn))
+
+    # Возвращения объекта кнопок
+    return markup
 
 
 # Обновляет значения в словарях dict1 и dict2 на основе массива array.
@@ -298,7 +313,7 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n, user_command=None, strict=False, none_lower=False):
+def check_message(command, n, user_command=None, strict=False, none_lower=True):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     user_object = user_object.replace('.', '')
@@ -1011,8 +1026,9 @@ class Statistics:
 # Вывод при команде старт
 @Bot.message_handler(commands=['start'])
 def start(message):
-    Bot.send_message(message.chat.id,
-                     'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".')
+    # Вывод описания и кнопок
+    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".',
+                     reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 # Вывод информации для помощи пользователю
@@ -1036,6 +1052,7 @@ def help_for_user(message):
         ['/find subject name', 'Находит топ-5 похожих тестов по строке',
          'subject - Выбор предмета из возможных (math, математика; physics, физика, phys); name - строка, по которой вы ищете тест']]
 
+    # Создание таблицы для вывода информации
     table_str = ""
     change = True
     for row in COMMANDS_FOR_USER_HELP:
@@ -1050,13 +1067,18 @@ def help_for_user(message):
         table_str += '\n\n'
         change = True
 
-    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev')
+    # Ссылка и переход для гит-хаба
+    markup = types.InlineKeyboardMarkup()
+    button1 = types.InlineKeyboardButton("Сайт гит-хаба", url='https://github.com/aip-python-tech-2024/works-Boldaev')
+    markup.add(button1)
+    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev', reply_markup=markup)
 
+    # Вывод таблицы команд для пользователя
     Bot.send_message(message.chat.id, 'Команды которые нужно посылать программе:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
 
-    Bot.send_message(message.chat.id,
-                     'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
+    # Вывод правил ввода ответов
+    Bot.send_message(message.chat.id,'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
 
 # Вывод возможных тестов
@@ -1066,22 +1088,36 @@ user_test_indexes = {}  # Хранение индекса на котором о
 @Bot.message_handler(commands=['tests'])
 def show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_message = check_message(message, 2, user_command='/tests', strict=True)
+    user_message = check_message(message, 1, user_command='/tests', strict=True)
+
+    # Проверка, что сообщение правильное
+    if not isinstance(user_message, bool):
+        # Вывод сообщения и ожидания предмета
+        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)', reply_markup=easy_markup("Математика", "Физика"))
+
+        Bot.register_next_step_handler(message, get_subject_and_show_tests)
+    else:
+        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+
+
+def get_subject_and_show_tests(message):
+    # Убираем факторы, которые могу быть причиной неизвестного сообщения
+    user_message = check_message(message, 1, strict=True)
 
     # Проверка, что сообщение правильное
     if not isinstance(user_message, bool):
         user_answer = Statistics.get_tests(user_message)
     else:
-        user_answer = 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests subject.\nКоманда для помощи: "/help".'
+        user_answer = 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".'
 
     # Получение результата в зависимости от ответа
-    if user_answer == 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests subject.\nКоманда для помощи: "/help".':
-        Bot.send_message(message.chat.id, user_answer)
+    if user_answer == 'Неизвестное сообщение или неправильный ввод.' or user_answer == 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".':
+        Bot.send_message(message.chat.id, user_answer, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     elif len(user_answer) >= 20:
-        Bot.send_message(message.chat.id, array_for_message(user_answer,
-                                                            omissions="index") + "\nНапишите /next для вывода тестов дальше.")
+        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index") + "\nНапишите /next для вывода тестов дальше.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     else:
-        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"))
+        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
     # Сохраняем человека, для продолжения просмотра тестов
     if message.chat.id not in user_test_indexes.keys():
@@ -1096,17 +1132,14 @@ def next_tests(message):
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id,
-                         "Напишите команду '/tests subject', чтобы программа поняла предмет который вам нужен.")
+        Bot.send_message(message.chat.id, "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.")
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
 
     # Выводим человеку тесты
-
     user_answer = Statistics.get_tests(user_test_indexes[message.chat.id][1])
-    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0],
-                                    end=user_test_indexes[message.chat.id][0] + 20)
+    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0], end=user_test_indexes[message.chat.id][0] + 20)
 
     if len(user_answer.split()) // 2 >= 20:
         Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.")
@@ -1117,13 +1150,37 @@ def next_tests(message):
                          "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.")
         del user_test_indexes[message.chat.id]
 
-        # Вывод статистики
 
-
+# Вывод статистики
 @Bot.message_handler(commands=['test_statistics'])
 def show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 2, user_command='/test_statistics')
+    message_text = check_message(message, 1, user_command='/test_statistics', strict=True)
+
+    # Выводим сообщение
+    if message_text:
+        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)')
+
+        Bot.register_next_step_handler(message, get_subject_for_show_statistics)
+    else:
+        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: "/help".')
+
+
+def get_subject_for_show_statistics(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    Bot.send_message(message.chat.id, 'Введите номер или название теста')
+
+    Bot.register_next_step_handler(message, get_index_of_test_for_show_statistics, message_text)
+
+
+def get_index_of_test_for_show_statistics(message, subject):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Соединяем в сообщение
+    message_text = subject + message_text[0]
 
     # Получаем статистику
     if message_text:
@@ -1142,8 +1199,7 @@ def show_statistics(message):
 
         Bot.send_message(message.chat.id, statistics)
     else:
-        Bot.send_message(message.chat.id,
-                         "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics subject name.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id,"Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.")
 
 
 @Bot.message_handler(commands=['find'])
@@ -1257,8 +1313,7 @@ def check_for_solve(message):
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id,
-                         'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, get_hash_and_start_test)
 
 
@@ -1295,7 +1350,7 @@ def get_hash(message):
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = []
-    message_text += check_message(message, 1, strict=True, none_lower=False)
+    message_text += check_message(message, 1, strict=True, none_lower=True)
 
     # Сохраняем hash
     if message_text:
