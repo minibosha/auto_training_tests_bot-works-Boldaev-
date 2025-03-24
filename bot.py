@@ -958,7 +958,7 @@ class Statistics:
         # Выводим статистику
         data = show_data()
         if not test_name:
-            return "Неизвестное сообщение или неправильный ввод."
+            return "Вашей статистики на этот тест нет."
         elif subject not in ('math', 'математика', 'physics', 'физика', 'phys'):
             return "Неизвестное сообщение или неправильный ввод."
         else:
@@ -1027,7 +1027,7 @@ class Statistics:
 @Bot.message_handler(commands=['start'])
 def start(message):
     # Вывод описания и кнопок
-    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".',
+    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".\nЧтобы узнать какие есть тесты напишите /tests.',
                      reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
@@ -1132,7 +1132,7 @@ def next_tests(message):
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id, "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.")
+        Bot.send_message(message.chat.id, "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
@@ -1142,12 +1142,11 @@ def next_tests(message):
     user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0], end=user_test_indexes[message.chat.id][0] + 20)
 
     if len(user_answer.split()) // 2 >= 20:
-        Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.")
+        Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     elif 0 < len(user_answer.split()) // 2 < 20:
-        Bot.send_message(message.chat.id, user_answer)
+        Bot.send_message(message.chat.id, user_answer, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     else:
-        Bot.send_message(message.chat.id,
-                         "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.")
+        Bot.send_message(message.chat.id, "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_test_indexes[message.chat.id]
 
 
@@ -1159,28 +1158,30 @@ def show_statistics(message):
 
     # Выводим сообщение
     if message_text:
-        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)')
+        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)', reply_markup=easy_markup("Математика", "Физика"))
 
         Bot.register_next_step_handler(message, get_subject_for_show_statistics)
     else:
-        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: "/help".')
+        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: "/help".', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 def get_subject_for_show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
-    Bot.send_message(message.chat.id, 'Введите номер или название теста')
+    Bot.send_message(message.chat.id, 'Введите номер или название теста', reply_markup=telebot.types.ReplyKeyboardRemove())
 
     Bot.register_next_step_handler(message, get_index_of_test_for_show_statistics, message_text)
 
 
 def get_index_of_test_for_show_statistics(message, subject):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 1, strict=True)
+    message_text = check_message(message, 0)
 
     # Соединяем в сообщение
-    message_text = subject + message_text[0]
+    print(subject, message_text)
+    if not isinstance(message_text, bool):
+        message_text = subject + message_text
 
     # Получаем статистику
     if message_text:
@@ -1197,19 +1198,55 @@ def get_index_of_test_for_show_statistics(message, subject):
 
             statistics = array_for_message(answer)
 
-        Bot.send_message(message.chat.id, statistics)
+        Bot.send_message(message.chat.id, statistics, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     else:
-        Bot.send_message(message.chat.id,"Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 @Bot.message_handler(commands=['find'])
 def find_similar(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3, user_command='/find')
+    message_text = check_message(message, 1, user_command='/find', strict=True)
 
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id,
-                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    # Спрашиваем предмет
+    Bot.send_message(message.chat.id, 'Введите предмет (математика/физика).',
+                     reply_markup=easy_markup("Математика", "Физика"))
+
+    # Ждём предмет
+    Bot.register_next_step_handler(message, get_subject_to_find_similar)
+
+
+def get_subject_to_find_similar(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    # Проверяем что правильный вывод
+    if isinstance(message_text, bool):
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.")
+        return False
+
+    # Спрашиваем текст
+    Bot.send_message(message.chat.id, 'Введите текст для поиска.',
+                     reply_markup=telebot.types.ReplyKeyboardRemove())
+
+    # Ждём текст
+    Bot.register_next_step_handler(message, get_text_to_find_similar, message_text)
+
+
+def get_text_to_find_similar(message, subject):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 0)
+
+    # Доделываем сообщение
+    message_text = subject + message_text
+
+    # Проверяем что правильный вывод
+    if isinstance(message_text, bool):
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.")
         return False
 
     # Находим топ-5 похожих слов
