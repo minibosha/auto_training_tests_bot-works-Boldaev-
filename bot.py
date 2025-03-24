@@ -18,6 +18,13 @@ token = getenv('token')
 # Создание бота
 Bot = telebot.TeleBot(token, parse_mode=None)
 
+
+""" Переменные """
+
+
+SUBJECTS = ['math', 'математика', 'physics', 'физика', 'phys']
+
+
 """ Функции """
 
 
@@ -1105,6 +1112,11 @@ def get_subject_and_show_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
     user_message = check_message(message, 1, strict=True)
 
+    # Проверка, что предметы в нужном диапазоне
+    if user_message[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
     # Проверка, что сообщение правильное
     if not isinstance(user_message, bool):
         user_answer = Statistics.get_tests(user_message)
@@ -1114,6 +1126,7 @@ def get_subject_and_show_tests(message):
     # Получение результата в зависимости от ответа
     if user_answer == 'Неизвестное сообщение или неправильный ввод.' or user_answer == 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".':
         Bot.send_message(message.chat.id, user_answer, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
     elif len(user_answer) >= 20:
         Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index") + "\nНапишите /next для вывода тестов дальше.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
     else:
@@ -1169,7 +1182,16 @@ def get_subject_for_show_statistics(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
-    Bot.send_message(message.chat.id, 'Введите номер или название теста', reply_markup=telebot.types.ReplyKeyboardRemove())
+    # Проверка, что предметы в нужном диапазоне
+    if message_text[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    if message_text:
+        Bot.send_message(message.chat.id, 'Введите номер или название теста', reply_markup=telebot.types.ReplyKeyboardRemove())
+    else:
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
 
     Bot.register_next_step_handler(message, get_index_of_test_for_show_statistics, message_text)
 
@@ -1179,7 +1201,6 @@ def get_index_of_test_for_show_statistics(message, subject):
     message_text = check_message(message, 0)
 
     # Соединяем в сообщение
-    print(subject, message_text)
     if not isinstance(message_text, bool):
         message_text = subject + message_text
 
@@ -1213,7 +1234,7 @@ def find_similar(message):
         return False
 
     # Спрашиваем предмет
-    Bot.send_message(message.chat.id, 'Введите предмет (математика/физика).',
+    Bot.send_message(message.chat.id, f'Выберите предмет на кнопке или напишите из списка: {SUBJECTS}.',
                      reply_markup=easy_markup("Математика", "Физика"))
 
     # Ждём предмет
@@ -1224,9 +1245,14 @@ def get_subject_to_find_similar(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
+    # Проверка, что предметы в нужном диапазоне
+    if message_text[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
     # Проверяем что правильный вывод
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.")
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return False
 
     # Спрашиваем текст
@@ -1241,22 +1267,26 @@ def get_text_to_find_similar(message, subject):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 0)
 
+    # Проверяем то правильный вывод
+    if isinstance(message_text, bool):
+        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
     # Доделываем сообщение
     message_text = subject + message_text
 
-    # Проверяем что правильный вывод
-    if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.")
-        return False
-
     # Находим топ-5 похожих слов
-    similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
+    try:
+        similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
+    except UnboundLocalError:
+        Bot.send_message(message.chat.id, "Ваша строка некорректна", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
 
     # Проверка, что мы получили массив слов
     if not isinstance(similar, str):
         similar = array_for_message(similar)
 
-    Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar)
+    Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 # Функция для начала тестов
