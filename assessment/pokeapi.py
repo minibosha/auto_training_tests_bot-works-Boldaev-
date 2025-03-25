@@ -4,6 +4,7 @@ from functools import lru_cache
 from base_pokemon import BasePokemon
 from pokemon import Pokemon
 from pokeerror import PokeError
+from pokemonstats import PokemonStats
 
 
 class PokeAPI:
@@ -17,12 +18,21 @@ class PokeAPI:
             response.raise_for_status()
             data = response.json()
 
+            # Отсекам нужную статистику
+            stats = {stat["stat"]["name"]: stat["base_stat"] for stat in data["stats"]}
+
             return Pokemon(
-                id_=data["id"],
+                id=data["id"],
                 name=data["name"],
                 height=data["height"],
-                weight=data["weight"]
-            )
+                weight=data["weight"],
+                stats=PokemonStats(
+                    hp=stats["hp"],
+                    attack=stats["attack"],
+                    defense=stats["defense"],
+                    special_attack=stats["special-attack"],
+                    special_defense=stats["special-defense"],
+                    speed=stats["speed"]))
         except requests.exceptions.RequestException as e:
             raise PokeError(f"Ошибка запроса: {str(e)}")
 
@@ -43,6 +53,5 @@ class PokeAPI:
                         yield BasePokemon(name=item["name"])
 
                 next_url = data.get("next")  # Получаем следующий URL из API
-
             except requests.exceptions.RequestException as e:
-                raise PokeError(f"Ошибка пагинации: {str(e)}")
+                raise PokeError(f"Ошибка запроса: {str(e)}")

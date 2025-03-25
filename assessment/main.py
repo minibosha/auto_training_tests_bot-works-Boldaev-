@@ -6,9 +6,9 @@ import time
 
 def get_heaviest_pokemon(generator, max_count: int) -> Pokemon:
     heaviest = None
-    # Ограничиваем генератор с помощью itertools.islice
+    # "Обнуляем" генератор с помощью itertools.islice
     for pokemon in itertools.islice(generator, max_count):
-        print(f"ID: {pokemon.id} | Name: {pokemon.name}")
+        print(f"ID: {pokemon.id} | Name: {pokemon.name} | weight {pokemon.weight}")
         if heaviest is None or pokemon.weight > heaviest.weight:
             heaviest = pokemon
     return heaviest
@@ -32,21 +32,20 @@ def first_50_test():
 
 
 @benchmark
-def first_20_test():
+def first_70_test():
     print("\nПервые 20 покемонов (должно быть быстрее)")
     generator = PokeAPI.get_all(get_full=True)  # Новый генератор начинает с начала
-    return get_heaviest_pokemon(generator, 20)
+    return get_heaviest_pokemon(generator, 70)
 
 
 # Получаем покемона ditto
 ditto = PokeAPI.get_pokemon("ditto")
-print(f"Получен покемон: {ditto}\n")
-
+print(f"Получен покемон: {ditto}\nЕго статистика: {ditto.stats}\n")
 
 # Первый тест (50 покемонов)
 result_50 = first_50_test()
 print(f"Самый тяжёлый: {result_50}\n")
 
 # Второй тест (20 покемонов, используем кэш)
-result_20 = first_20_test()
+result_20 = first_70_test()
 print(f"Самый тяжёлый: {result_20}")
