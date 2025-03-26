@@ -564,8 +564,8 @@ class Hash:
         self.string.append(num)
 
 
-# Класс для тестов по математике
-class Math:
+# Класс для предмета
+class Subject:
     def __init__(self, name_test, need_solve, user_hash):
         # Данные пользователя
         self.user_answers: list[str] = []
@@ -599,6 +599,60 @@ class Math:
         self.name_test: str = name_test
         self.need_solve: bool = need_solve
 
+    # Выводим hash
+    def show_hash(self):
+        return self.program_hash
+
+    # Вывод номеров теста
+    def show_test(self):
+        return array_for_message(self.tasks), len(self.answers)
+
+    # Сохранение ответа
+    def add_answer(self, n: int, task: int, ans: str):
+        if len(self.user_answers) != 0:
+            self.user_answers[task - 1] = ans
+        else:
+            self.user_answers = [''] * n
+            self.user_answers[task - 1] = ans
+
+    # Выводим решение
+    def show_solve(self):
+        if self.need_solve:
+            return array_for_message(self.solve)
+        else:
+            return False
+
+    # Проверяем ответы
+    def check_answers(self):
+        ans = ''
+        m = 0
+        for ind in range(len(self.answers)):
+            ans += f'Задача №{ind + 1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
+
+            # Вердикт
+            if self.user_answers[ind] == self.answers[ind]:
+                ans += 'Правильно\n'
+                m += 1
+            else:
+                ans += 'Неправильно\n'
+
+        # Результат
+        ans += f'Итог: {m}/{len(self.answers)} ({int(m / len(self.answers) * 100)}%) правильных.'
+
+        return ans
+
+    # Выводим кол-во правильных ответов
+    def get_point(self):
+        n = 0
+        for ind in range(len(self.answers)):
+            if self.user_answers[ind] == self.answers[ind]:
+                n += 1
+
+        return n
+
+
+# Класс для тестов по математике
+class Math(Subject):
     # Нахождение и начало теста
     def create_test(self):
         # Переменные которые могут пригодиться при создании теста
@@ -677,58 +731,6 @@ class Math:
 
         # Получаем hash
         self.program_hash = User_formulas.get_hash()
-        print(self.program_hash)
-
-    # Выводим hash
-    def show_hash(self):
-        return self.program_hash
-
-    # Вывод номеров теста
-    def show_test(self):
-        return array_for_message(self.tasks), len(self.answers)
-
-    # Сохранение ответа
-    def add_answer(self, n: int, task: int, ans: str):
-        if len(self.user_answers) != 0:
-            self.user_answers[task - 1] = ans
-        else:
-            self.user_answers = [''] * n
-            self.user_answers[task - 1] = ans
-
-    # Выводим решение
-    def show_solve(self):
-        if self.need_solve:
-            return array_for_message(self.solve)
-        else:
-            return False
-
-    # Проверяем ответы
-    def check_answers(self):
-        ans = ''
-        m = 0
-        for ind in range(len(self.answers)):
-            ans += f'Задача №{ind + 1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
-
-            # Вердикт
-            if self.user_answers[ind] == self.answers[ind]:
-                ans += 'Правильно\n'
-                m += 1
-            else:
-                ans += 'Неправильно\n'
-
-        # Результат
-        ans += f'Итог: {m}/{len(self.answers)} ({int(m / len(self.answers) * 100)}%) правильных.'
-
-        return ans
-
-    # Выводим кол-во правильных ответов
-    def get_point(self):
-        n = 0
-        for ind in range(len(self.answers)):
-            if self.user_answers[ind] == self.answers[ind]:
-                n += 1
-
-        return n
 
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
