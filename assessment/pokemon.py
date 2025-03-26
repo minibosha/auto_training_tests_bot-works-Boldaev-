@@ -1,5 +1,6 @@
-from base_pokemon import BasePokemon
 from dataclasses import dataclass
+
+from base_pokemon import BasePokemon
 from pokemonstats import PokemonStats
 
 

@@ -1,9 +1,11 @@
-import requests
-from typing import Generator, Union
 from functools import lru_cache
+from typing import Generator, Union
+
+import requests
+
 from base_pokemon import BasePokemon
-from pokemon import Pokemon
 from pokeerror import PokeError
+from pokemon import Pokemon
 from pokemonstats import PokemonStats
 
 
