@@ -1087,7 +1087,8 @@ def help_for_user(message):
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
 
     # Вывод правил ввода ответов
-    Bot.send_message(message.chat.id,'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
+    Bot.send_message(message.chat.id,'Правила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.'
+                     , reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 # Вывод возможных тестов
@@ -1302,28 +1303,68 @@ user_tests = {}  # Словарь для сохранения тестов
 @Bot.message_handler(commands=['start_test'])
 def start_test(message):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3, user_command='/start_test', strict=True)
+    message_text = check_message(message, 1, user_command='/start_test', strict=True)
 
     # Проверяем что правильное сообщение
-    if isinstance(message_text, bool) or len(message_text) == 1:
+    if isinstance(message_text, bool):
         Bot.send_message(message.chat.id,
-                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.")
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return False
+
+    Bot.send_message(message.chat.id, 'Введите предмет (математика/физика)', reply_markup=easy_markup('Математика', 'Физика'))
+
+    Bot.register_next_step_handler(message, get_subject_for_start_test)
+
+
+def get_subject_for_start_test(message):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 1, strict=True)
+
+    if isinstance(message_text, bool) or message_text[0] not in SUBJECTS:
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    Bot.send_message(message.chat.id, 'Введите название или номер задачи (задачи можно узнать по команде /tests)',
+                     reply_markup=telebot.types.ReplyKeyboardRemove())
+
+    Bot.register_next_step_handler(message, get_ind_for_start_test, message_text)
+
+
+def get_ind_for_start_test(message, subject):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 0)
+
+    if message_text == ['/tests']:
+        Bot.send_message(message.chat.id, 'Прохождение теста окончено, напишите команду /tests снова',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    if isinstance(message_text, bool):
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    message_text = subject + message_text
 
     # Проверяем что есть такой тест по его названию или индексу
     if message_text[1].isdigit():
         test_name = Statistics.find_name(message_text[0], int(message_text[1]))
         if test_name is None:
-            Bot.send_message(message.chat.id, 'Такого номера теста нет.')
+            Bot.send_message(message.chat.id, 'Такого номера теста нет.',
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         else:
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)")
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)", reply_markup=easy_markup('Да', 'Нет'))
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
     else:
         test_name = ' '.join(message_text[1:])
         if test_name in Statistics.get_tests(message_text):
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)")
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)", reply_markup=easy_markup('Да', 'Нет'))
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
@@ -1341,10 +1382,10 @@ def check_for_start(message):
         Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Тест не начался.')
+        Bot.send_message(message.chat.id, 'Тест не начался.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_tests[message.chat.id]
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1379,7 +1420,7 @@ def check_for_solve(message):
         Bot.send_message(message.chat.id, 'Решение теста не будет.\nУ вас есть хэш? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1401,12 +1442,12 @@ def ask_for_hash(message):
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
         need_for_create_solve = True
-        Bot.send_message(message.chat.id, 'Введите hash.')
+        Bot.send_message(message.chat.id, 'Введите hash.', reply_markup=telebot.types.ReplyKeyboardRemove())
         Bot.register_next_step_handler(message, get_hash)
     elif message_text[0] in ('нет', 'no', 'n'):
         get_hash_and_start_test(message)
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1452,7 +1493,8 @@ def get_hash_and_start_test(message):
         Bot.send_message(message.chat.id, 'Началось создание теста...')
         create_test(message, need_for_create_solve)
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.')
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1463,10 +1505,13 @@ def get_hash_and_start_test(message):
         create_test(message, need_for_create_solve)
 
 
-noth = [0]  # Массив для сохранения проверки
+check = 0
 
 
 def create_test(message, need_solve: bool, user_hash=''):
+    # Подключаем переменную для проверки
+    global check
+
     # Добавляем класс теста к человеку
     user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve, user_hash)
 
@@ -1474,13 +1519,14 @@ def create_test(message, need_solve: bool, user_hash=''):
     user_tests[message.chat.id].create_test()
 
     # Выводим hash
-    Bot.send_message(message.chat.id, f'Hash для повторного прохождения теста: {user_tests[message.chat.id].show_hash()}')
+    Bot.send_message(message.chat.id, f'Hash для повторного прохождения теста: {user_tests[message.chat.id].show_hash()}',
+                     reply_markup=easy_markup('/answer', '/end', '/help'))
 
     # Выводим правила ввода ответов
     Bot.send_message(message.chat.id, 'Можете начать отправлять ответы.\nПравила ввода ответов:\nВвод команд может показаться странным для многих пользователей.\nТакой стиль выбран специально для уменьшения вопросов от программы (предмет, номер, переспрашивание...).\nКак отправлять программе команды? Вот что нужно для этого: в таблице (показывается при команде "/help") указана команда и данные которые ей нужны (параметры). Данные вводятся после команды (/команда) через пробел в порядке указанном в таблице. Например: "/start"; "/start_test math 1"; "/an 1 -0-4"; "/find math полные квадратные уравнения".\nКогда просят ввести название (name) можно вводить его с пробелами.\nТакже хотелось упомянуть что пунктуация и точки исправляются (но не надо эти злоупотреблять!).\nЖелаем приятного пользования! Советуем посмотреть пример разговора (на гитхабе, посмотреть можно при команде "/help") для более понятного понимания возможностей программы и правильного разговора с ней.')
 
     # Выводим тест
-    tasks_txt, noth[0] = user_tests[message.chat.id].show_test()
+    tasks_txt, check = user_tests[message.chat.id].show_test()
     Bot.send_message(message.chat.id, tasks_txt)
 
     # Заходим в петлю проверки ответов
@@ -1488,37 +1534,73 @@ def create_test(message, need_solve: bool, user_hash=''):
 
 
 def save_answers(message):
-    # Убираем факторы, которые могут быть причиной неизвестного сообщения
-    message_text = check_message(message, 3, user_command='/answer')
-    if check_message(message, 3, user_command='/an'):
-        message_text = check_message(message, 3, user_command='/an')
-    elif check_message(message, 0, user_command='/end'):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения и собираем сообщение
+    message_text = check_message(message, 1, user_command='/answer', strict=True)
+    if check_message(message, 1, user_command='/an', strict=True) or message_text:
+        Bot.send_message(message.chat.id, 'Введите номер задачи.', reply_markup=telebot.types.ReplyKeyboardRemove())
+
+        Bot.register_next_step_handler(message, get_num_of_task_for_save_answer)
+    elif check_message(message, 1, user_command='/end', strict=True):
         message_text = ['/end']
-    elif check_message(message, 0, user_command='/help'):
+        check_message_text(message, message_text)
+    elif check_message(message, 1, user_command='/help', strict=True):
         message_text = ['/help']
+        check_message_text(message, message_text)
     elif not any([message_text]):
         message_text = [False]
+        check_message_text(message, message_text)
+    elif isinstance(message_text, bool):
+        message_text = [False]
+        check_message_text(message, message_text)
+
+
+def get_num_of_task_for_save_answer(message):
+    message_text = check_message(message, 1, strict=True)
+
+    if isinstance(message_text, bool):
+        message_text = [False]
+        check_message_text(message, message_text)
+
+    Bot.send_message(message.chat.id, 'Введите ваш ответ.', reply_markup=telebot.types.ReplyKeyboardRemove())
+
+    Bot.register_next_step_handler(message, get_answer_for_task_for_save_answer, message_text)
+
+
+def get_answer_for_task_for_save_answer(message, num):
+    message_text = check_message(message, 0)
+
+    if isinstance(message_text, bool):
+        message_text = [False]
+        check_message_text(message, message_text)
+
+    check_message_text(message, num + message_text)
+
+
+def check_message_text(message, message_text):
+    # Переменная для проверки
+    global check
 
     # Проверка сообщения
     if message_text[0] == '/end':
         show_results(message)
     elif message_text[0] == '/help':
         help_for_user(message)
+        Bot.send_message(message.chat.id, 'Продолжайте решать задачи по команде /answer. Для выхода из задач введите /end.', reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     elif isinstance(message_text[0], int):
         Bot.send_message(message.chat.id,
-                         "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.", reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
-    elif int(message_text[0]) <= int(noth[0]):
-        user_tests[message.chat.id].add_answer(noth[0], int(message_text[0]), message_text[1])
-        Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.")
+    elif int(message_text[0]) <= int(check):
+        user_tests[message.chat.id].add_answer(check, int(message_text[0]), message_text[1])
+        Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.", reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     else:
         Bot.send_message(message.chat.id,
-                         "Вы некорректно ввели ответ. Формат ответа: /an task answer.\nЧтобы закончить тест введите '/end'.")
+                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.", reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
 
@@ -1528,14 +1610,14 @@ def show_results(message):
     Bot.clear_step_handler_by_chat_id(message.chat.id)
 
     if len(user_tests[message.chat.id].user_answers) == 0:
-        Bot.send_message(message.chat.id, 'Вы не дали ни одного ответа, результат теста не будет засчитан.')
+        Bot.send_message(message.chat.id, 'Вы не дали ни одного ответа, результат теста не будет засчитан.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
         return True
     else:
         # Выводим решения (если нужно)
         Bot.send_message(message.chat.id, user_tests[message.chat.id].show_solve())
 
         # Выводим проверку ответов
-        Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers())
+        Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers(), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
         # Выводим статистику
         Statistics.add_statistics(user_tests[message.chat.id].get_point(), 'math', message.chat.id,
