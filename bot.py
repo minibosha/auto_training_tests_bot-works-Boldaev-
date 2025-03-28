@@ -322,10 +322,11 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n, user_command=None, strict=False, none_lower=True):
+def check_message(command, n, user_command=None, strict=False, none_lower=True, answer=False):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
-    user_object = user_object.replace('.', '')
+    if not answer:
+        user_object = user_object.replace('.', '')
     if none_lower:
         user_object = user_object.lower()
 
@@ -767,7 +768,7 @@ class Phys(Subject):
                 self.solve.append('1) Подставляем в формулу и получаем: ' + str(symbol['U']) + '/' + str(symbol['R']) + ' = ' + str(answers[0]))
 
                 self.answers.append(str(answers[0]))
-                self.tasks.append('1) Найдите силу тока в цепи и напишите его, если в цепи напряжение равно ' +
+                self.tasks.append('1) Найдите силу тока в цепи и напишите её, если в цепи напряжение равно ' +
                                   str(symbol["U"]) + ' А, а сопротивление лампы равно ' + str(symbol["R"]) + ' Ом')
 
                 print(answers, self.answers, symbol, self.solve, self.tasks)
@@ -1656,13 +1657,13 @@ def get_num_of_task_for_save_answer(message):
 
 
 def get_answer_for_task_for_save_answer(message, num):
-    message_text = check_message(message, 0)
+    message_text = check_message(message, 0, answer=True)
 
     if isinstance(message_text, bool):
         message_text = [False]
         check_message_text(message, message_text)
 
-    message_text[0] = message_text[0].replace(',', '.')             # Не заменять точку на пробел
+    message_text[0] = message_text[0].replace(',', '.')
 
     check_message_text(message, num + message_text)
 
