@@ -23,6 +23,8 @@ Bot = telebot.TeleBot(token, parse_mode=None)
 
 
 SUBJECTS = ['math', 'математика', 'physics', 'физика', 'phys']
+MATH_SUB = ['math', 'математика']
+PHYS_SUB = ['physics', 'физика', 'phys']
 
 
 """ Функции """
@@ -732,6 +734,75 @@ class Math(Subject):
         # Получаем hash
         self.program_hash = User_formulas.get_hash()
 
+    @staticmethod
+    def get_subject():
+        return 'math'
+
+
+# Класс для тестов по физике
+class Phys(Subject):
+    # Нахождение и начало теста
+    def create_test(self):
+        # Переменные которые могут пригодиться при создании теста
+        equations = []
+        answers = []
+        symbol = []
+        other = []
+
+        # Создаём класс UserFormulas с хэшом
+        User_formulas = UserFormulas(self.user_hash)
+
+        # Создаём тест
+        match self.name_test:
+            case 'закон ома':
+                # Создаём решение
+                self.solve.append('Для решения задачи нужен закон Ома: I = U / R\n из которой получаем U = I * R, R = U / I, где I - Сила тока, U - напряжение, R - сопротивление.')
+
+                # Создаём первую задачу
+                answers, symbol = User_formulas.equation_solver(
+                    ['U / R'],
+                    {'U': (1, 100), 'R': (1, 220)}, normal_check=True, after_point=5,
+                    exception=['0'])
+
+                self.solve.append('1) Подставляем в формулу и получаем: ' + str(symbol['U']) + '/' + str(symbol['R']) + ' = ' + str(answers[0]))
+
+                self.answers.append(str(answers[0]))
+                self.tasks.append('1) Найдите силу тока в цепи и напишите его, если в цепи напряжение равно ' +
+                                  str(symbol["U"]) + ' А, а сопротивление лампы равно ' + str(symbol["R"]) + ' Ом')
+
+                print(answers, self.answers, symbol, self.solve, self.tasks)
+
+                # Создаём вторую задачу
+                answers, symbol = User_formulas.equation_solver(
+                    ['U1 / I1'],
+                    {'U1': (1, 100), 'I1': (1, 100)}, normal_check=True, after_point=5,
+                    exception=['0'])
+
+                self.solve.append(f'2) Подставляем в формулу и получаем: ' + str(symbol['U1']) + '/' + str(symbol['I1']) + ' = ' + str(answers[0]))
+
+                self.answers.append(str(answers[0]))
+                print(answers, self.answers, symbol)
+                self.tasks.append('2) Найдите сопротивление лампы и напишите его, если сила тока в цепи ' + str(symbol['I1']) + ' A, напряжение в цепи ' + str(symbol['U1']) + ' В')
+
+                # Создаём третью задачу
+                answers, symbol = User_formulas.equation_solver(
+                    ['U1 / ((R1 * R2) / (R1 + R2))'],
+                    {'U1': (1, 100), 'R1': (1, 220), 'R2': (1, 220)}, normal_check=True, after_point=5,
+                    exception=['0'])
+
+                self.solve.append(f'3) Для расчёта нам нужна формула расчёта сопротивления двух параллельных резисторов: ((R1 * R2) / (R1 + R2)).\nСопротивление подставляем в закон ома и получим формулу: U / ((R1 * R2) / (R1 + R2)) = ' + str(answers[0]))
+
+                self.answers.append(str(answers[0]))
+                print(answers, self.answers, symbol)
+                self.tasks.append('3) Найдите силу тока в цепи и напишите её, если напряжение равно ' + str(symbol['U1']) + ' В, и два резистора параллельного подключения ' + str(symbol['R1']) + ' и ' + str(symbol['R2']) + ' Ом')
+
+        # Получаем hash
+        self.program_hash = User_formulas.get_hash()
+
+    @staticmethod
+    def get_subject():
+        return 'phys'
+
 
 # Вывод функций выводящий подробные действия решения и помогающие программе
 class UserFormulas:
@@ -799,7 +870,6 @@ class UserFormulas:
                         self.user_nums = ''
                         continue
 
-                print(numbers, dop_vars)
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
                 symbols_list.extend(list(dop_vars.values()))  # Добавляем доп. переменные
@@ -845,6 +915,7 @@ class UserFormulas:
                     results = UserFormulas.round_nums(results, after_point)
 
                 # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
+                print(numbers, dop_vars, results, UserFormulas.round_nums(results, after_point), UserFormulas.normal(results, after_point))
                 if normal_check:
                     if len(results) == len(equations):
                         if UserFormulas.normal(results, after_point):
@@ -1318,6 +1389,9 @@ def start_test(message):
 
 
 def get_subject_for_start_test(message):
+    # Сохраняем предмет для создания теста под предмет
+    global subject
+
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 1, strict=True)
 
@@ -1325,6 +1399,13 @@ def get_subject_for_start_test(message):
         Bot.send_message(message.chat.id,
                          "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test.\nКоманда для помощи: '/help'.",
                          reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        return False
+
+    if message_text[0] in MATH_SUB:
+        subject = 'math'
+    elif message_text[0] in PHYS_SUB:
+        subject = 'phys'
+    else:
         return False
 
     Bot.send_message(message.chat.id, 'Введите название или номер задачи (задачи можно узнать по команде /tests)',
@@ -1400,6 +1481,7 @@ def check_for_start(message):
 # Данные которые нужны для создания теста
 need_for_create_solve = False
 user_hash = ''
+subject = ''
 
 
 def check_for_solve(message):
@@ -1435,6 +1517,7 @@ def ask_for_hash(message):
     # Подключаем глобальные переменные
     global need_for_create_solve
     global user_hash
+
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = []
     message_text += check_message(message, 1, strict=True)
@@ -1511,9 +1594,15 @@ check = 0
 def create_test(message, need_solve: bool, user_hash=''):
     # Подключаем переменную для проверки
     global check
+    global subject
 
     # Добавляем класс теста к человеку
-    user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve, user_hash)
+    if subject in MATH_SUB:
+        user_tests[message.chat.id] = Math(user_tests[message.chat.id], need_solve, user_hash)
+    elif subject in PHYS_SUB:
+        user_tests[message.chat.id] = Phys(user_tests[message.chat.id], need_solve, user_hash)
+    else:
+        return False
 
     # Создаём тест
     user_tests[message.chat.id].create_test()
@@ -1573,6 +1662,8 @@ def get_answer_for_task_for_save_answer(message, num):
         message_text = [False]
         check_message_text(message, message_text)
 
+    message_text[0] = message_text[0].replace(',', '.')             # Не заменять точку на пробел
+
     check_message_text(message, num + message_text)
 
 
@@ -1614,13 +1705,15 @@ def show_results(message):
         return True
     else:
         # Выводим решения (если нужно)
-        Bot.send_message(message.chat.id, user_tests[message.chat.id].show_solve())
+        solve = user_tests[message.chat.id].show_solve()
+        if solve:
+            Bot.send_message(message.chat.id, solve)
 
         # Выводим проверку ответов
         Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers(), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
         # Выводим статистику
-        Statistics.add_statistics(user_tests[message.chat.id].get_point(), 'math', message.chat.id,
+        Statistics.add_statistics(user_tests[message.chat.id].get_point(), user_tests[message.chat.id].get_subject(), message.chat.id,
                                   user_tests[message.chat.id].name_test)
 
     # Удаляем человека из памяти
