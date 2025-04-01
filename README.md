@@ -67,7 +67,8 @@
 
 
 ### Планируется в следующих обновлениях:
-![Иллюстрация к проекту](https://github.com/jon/coolproject/raw/master/image/image.png)
+![Иллюстрация к проекту о том, что пока отдыхаю (фото взято из тик-тока)](https://github.com/aip-python-tech-2024/works-Boldaev/blob/main/Photos/Not_usuable/img.png)
+
 - Добавить больше тестов
 
 ### Пример разговора с чат-ботом:
