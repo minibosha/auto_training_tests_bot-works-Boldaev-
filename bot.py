@@ -322,12 +322,12 @@ def show_data():
 
 
 # Функция проверки и исправление ввода
-def check_message(command, n, user_command=None, strict=False, none_lower=True, answer=False):
+def check_message(command, n, user_command=None, strict=False, none_lower=False, answer=False):
     # Убираем частые ошибки в сообщениях (точки и регистр)
     user_object = command.text
     if not answer:
         user_object = user_object.replace('.', '')
-    if none_lower:
+    if not none_lower:
         user_object = user_object.lower()
 
     # Разграничиваем текст
@@ -364,16 +364,16 @@ class Hash:
 
     # Функция расшифровки
     def transcriber(self) -> bool | list:
-        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                       'w']  # Константы для постановки знаков
+        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w']  # Константы для постановки знаков
         RUSS_SYMBOLS = ['э', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
         HEX_RUSS = {'а': 'A', 'б': 'B', 'в': 'C', 'г': 'D', 'д': 'E', 'е': 'F'}
         unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
         result = []
-
+        print(self.string, self.encrypted)
         # Добавляем запятые в конец строк
         for ind in range(len(unencrypted_str)):
             unencrypted_str[ind] += ' ,'
+        print(result)
 
         # Разделяем символы
         for stroke in unencrypted_str:
@@ -701,7 +701,7 @@ class Math(Subject):
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=['-1', '0', '1'], not_in_exc=('D',))
+                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=['-1', '0', '1'], not_in_exc=['D',])
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -838,7 +838,6 @@ class UserFormulas:
                 for ind, obj in enumerate(ranges.keys()):
                     numbers[obj] = random.randint(ranges[obj][0], ranges[obj][1])
 
-                print(numbers, self.user_nums)
                 # Проверяем расшифровку hash от пользователя
                 if self.user_nums:
                     user_numbers = self.user_nums[0].split()  # Разделяем числа пользователя
@@ -861,12 +860,14 @@ class UserFormulas:
                             range_values = list(ranges.values())
                             if ind < len(range_values):
                                 start, stop = range_values[ind]
-                                print(ranges.values(), start, stop + 1, list(range(start, stop + 1)), num, num not in range(start, stop + 1))  # Добавляем 1 к stop
-                                if num not in range(start, stop + 1):  # Включаем верхнюю границу
+                                if num > stop or num < start:  # Включаем верхнюю границу
                                     self.user_nums = ''
                                     break
                         # Если все числа прошли проверку, обновляем numbers и dop_vars
-                        numbers = update_dicts_with_array(numbers, user_numbers)
+                        if self.user_nums:
+                            numbers = update_dicts_with_array(numbers, user_numbers)
+                        else:
+                            continue
                     else:
                         self.user_nums = ''
                         continue
@@ -916,7 +917,6 @@ class UserFormulas:
                     results = UserFormulas.round_nums(results, after_point)
 
                 # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
-                print(numbers, dop_vars, results, UserFormulas.round_nums(results, after_point), UserFormulas.normal(results, after_point))
                 if normal_check:
                     if len(results) == len(equations):
                         if UserFormulas.normal(results, after_point):
@@ -1218,6 +1218,10 @@ def get_subject_and_show_tests(message):
 def next_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
     user_message = check_message(message, 1, user_command='/next')
+
+    if not user_message:
+        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
@@ -1558,8 +1562,8 @@ def get_hash(message):
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = []
-    if check_message(message, 1, strict=True):
-        message_text += check_message(message, 1, strict=True)
+    if check_message(message, 1, strict=True, none_lower=True):
+        message_text += check_message(message, 1, strict=True, none_lower=True)
     else:
         message_text = [False]
 
@@ -1568,6 +1572,7 @@ def get_hash(message):
         user_hash = message_text[0]
     else:
         user_hash = []
+    print(user_hash, message_text)
 
     get_hash_and_start_test(message)
 
@@ -1579,8 +1584,8 @@ def get_hash_and_start_test(message):
 
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = []
-    if check_message(message, 1, strict=True):
-        message_text += check_message(message, 1, strict=True)
+    if check_message(message, 1, strict=True, none_lower=True):
+        message_text += check_message(message, 1, strict=True, none_lower=True)
     else:
         message_text = [False]
 
