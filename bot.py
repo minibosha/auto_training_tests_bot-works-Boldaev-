@@ -1244,8 +1244,13 @@ def get_subject_and_show_tests(message):
                                                   "/start_test"))
     else:
         Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"),
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
-                                                  "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+
+        Bot.send_message(message.chat.id,
+                         "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+
+        Bot.register_next_step_handler(message, check_for_easy_start_test, user_message[0])
 
     # Сохраняем человека, для продолжения просмотра тестов
     if message.chat.id not in user_test_indexes.keys():
@@ -1289,10 +1294,42 @@ def next_tests(message):
                                                   "/start_test"))
     else:
         Bot.send_message(message.chat.id,
-                         "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
-                                                  "/start_test"))
+                         "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests'.")
+
+        Bot.send_message(message.chat.id,
+                         "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        subject = user_test_indexes[message.chat.id][1]
+
         del user_test_indexes[message.chat.id]
+
+        Bot.register_next_step_handler(message, check_for_easy_start_test, subject)
+
+
+# Проверка, что пользователь решил ввести число
+def check_for_easy_start_test(message, subject):
+    # Убираем факторы, которые могут быть причиной неизвестного сообщения
+    message_text = check_message(message, 0)
+    if not message_text:
+        return False
+
+    message_text = message_text[0]  # Оставляем только сообщение
+    if message_text == '/start':
+        start(message)
+    elif message_text == '/help':
+        help_for_user(message)
+    elif message_text == '/tests':
+        show_tests(message)
+    elif message_text == '/next':
+        next_tests(message)
+    elif message_text == '/test_statistics':
+        show_statistics(message)
+    elif message_text == '/find':
+        find_similar(message)
+    elif message_text == '/start_test':
+        start_test(message)
+    else:
+        get_ind_for_start_test(message, [subject])
 
 
 # Вывод статистики
@@ -1502,9 +1539,20 @@ def get_subject_for_start_test(message):
     Bot.register_next_step_handler(message, get_ind_for_start_test, message_text)
 
 
-def get_ind_for_start_test(message, subject):
+def get_ind_for_start_test(message, get_subject):
+    # Сохраняем предмет для создания теста под предмет
+    global subject
+
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 0)
+
+    # Сохраняем предмет пользователя
+    if get_subject[0] in MATH_SUB:
+        subject = 'math'
+    elif get_subject[0] in PHYS_SUB:
+        subject = 'phys'
+    else:
+        return False
 
     if message_text == ['/tests']:
         Bot.send_message(message.chat.id, 'Прохождение теста окончено, напишите команду /tests снова',
@@ -1519,7 +1567,7 @@ def get_ind_for_start_test(message, subject):
                                                   "/start_test"))
         return False
 
-    message_text = subject + message_text
+    message_text = get_subject + message_text
 
     # Проверяем что есть такой тест по его названию или индексу
     if message_text[1].isdigit():
@@ -1860,7 +1908,7 @@ def show_results(message):
     return True
 
 
-# Ответ на все неизвестные ссобщения
+# Ответ на все неизвестные собщения
 @Bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     Bot.send_message(message.chat.id,
