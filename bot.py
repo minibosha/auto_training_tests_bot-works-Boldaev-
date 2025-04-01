@@ -7,9 +7,9 @@ from os import getenv
 
 # Создание и настройка бота
 import telebot
-from telebot import types # для создания кнопок
 from dotenv import load_dotenv
 from sympy import symbols, sympify
+from telebot import types  # для создания кнопок
 
 """ Подгрузка токена бота и его создание """
 load_dotenv()
@@ -18,14 +18,11 @@ token = getenv('token')
 # Создание бота
 Bot = telebot.TeleBot(token, parse_mode=None)
 
-
 """ Переменные """
-
 
 SUBJECTS = ['math', 'математика', 'physics', 'физика', 'phys']
 MATH_SUB = ['math', 'математика']
 PHYS_SUB = ['physics', 'физика', 'phys']
-
 
 """ Функции """
 
@@ -364,7 +361,8 @@ class Hash:
 
     # Функция расшифровки
     def transcriber(self) -> bool | list:
-        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w']  # Константы для постановки знаков
+        ENG_SYMBOLS = ['g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                       'w']  # Константы для постановки знаков
         RUSS_SYMBOLS = ['э', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'х', 'ч']
         HEX_RUSS = {'а': 'A', 'б': 'B', 'в': 'C', 'г': 'D', 'д': 'E', 'е': 'F'}
         unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
@@ -673,7 +671,9 @@ class Math(Subject):
                 # 1. Полное приведённое квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                answers, symbol = User_formulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -696,21 +696,29 @@ class Math(Subject):
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
+                self.tasks.append(
+                    f'1) Решите полное приведённое квадратное уравнение: {other}. В ответ введите корни в порядке возрастания без пробелов (минусы и нули учитываются).\n')
 
                 # 2. Полное квадратное уравнение.
                 # Создаём уравнение
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
-                answers, symbol = User_formulas.equation_solver(["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"], {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0, exception=['-1', '0', '1'], not_in_exc=['D',])
+                answers, symbol = User_formulas.equation_solver(
+                    ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
+                    {'a': (-20, 20), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0,
+                    exception=['-1', '0', '1'], not_in_exc=['D', ])
 
                 # Создаём полное уравнение
                 other = UserFormulas.show_task_eq("ax^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
 
                 # Проверяем что дискриминант не ноль
                 if answers[0]:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень', 'Вычисляем второй корень'], equations, answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
+                        'Находим дискриминант, т.к. дискриминант больше нуля => 2 корня', 'Вычисляем первый корень',
+                        'Вычисляем второй корень'], equations, answers))
                 else:
-                    self.solve.append(UserFormulas.create_solve_txt(2, other, ['Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'], equations[:-1], answers))
+                    self.solve.append(UserFormulas.create_solve_txt(2, other, [
+                        'Находим дискриминант, т.к. дискриминант равен нулю => 1 корень', 'Вычисляем корень'],
+                                                                    equations[:-1], answers))
 
                 # Добавляем ответ
                 equations = sorted(answers[1:])
@@ -720,13 +728,16 @@ class Math(Subject):
                 self.answers.append(answers)
 
                 # Создаём первый вопрос
-                self.tasks.append(f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
+                self.tasks.append(
+                    f'2) Решите полное квадратное уравнение: {other}. В ответ введите ответ введите корни возрастания без пробелов (минусы и нули учитываются).')
             case "сложение":
                 # Создаём три простых задачи и добавляем нужное по ним
-                self.solve.append('Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
+                self.solve.append(
+                    'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
 
                 for ind in range(3):
-                    answers, symbol = User_formulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)}, normal_check=True, after_point=0)
+                    answers, symbol = User_formulas.equation_solver(['a + b'], {'a': (0, 100), 'b': (0, 100)},
+                                                                    normal_check=True, after_point=0)
                     equations.append(UserFormulas.show_task_eq('a b', a=symbol["a"], b=symbol["b"])[2:])
                     self.answers.append(str(int(sum(answers))))
 
@@ -757,7 +768,8 @@ class Phys(Subject):
         match self.name_test:
             case 'закон ома':
                 # Создаём решение
-                self.solve.append('Для решения задачи нужен закон Ома: I = U / R\n из которой получаем U = I * R, R = U / I, где I - Сила тока, U - напряжение, R - сопротивление.')
+                self.solve.append(
+                    'Для решения задачи нужен закон Ома: I = U / R\n из которой получаем U = I * R, R = U / I, где I - Сила тока, U - напряжение, R - сопротивление.')
 
                 # Создаём первую задачу
                 answers, symbol = User_formulas.equation_solver(
@@ -765,7 +777,9 @@ class Phys(Subject):
                     {'U': (1, 100), 'R': (1, 220)}, normal_check=True, after_point=5,
                     exception=['0'])
 
-                self.solve.append('1) Подставляем в формулу и получаем: ' + str(symbol['U']) + '/' + str(symbol['R']) + ' = ' + str(answers[0]))
+                self.solve.append(
+                    '1) Подставляем в формулу и получаем: ' + str(symbol['U']) + '/' + str(symbol['R']) + ' = ' + str(
+                        answers[0]))
 
                 self.answers.append(str(answers[0]))
                 self.tasks.append('1) Найдите силу тока в цепи и напишите её, если в цепи напряжение равно ' +
@@ -779,11 +793,13 @@ class Phys(Subject):
                     {'U1': (1, 100), 'I1': (1, 100)}, normal_check=True, after_point=5,
                     exception=['0'])
 
-                self.solve.append(f'2) Подставляем в формулу и получаем: ' + str(symbol['U1']) + '/' + str(symbol['I1']) + ' = ' + str(answers[0]))
+                self.solve.append(f'2) Подставляем в формулу и получаем: ' + str(symbol['U1']) + '/' + str(
+                    symbol['I1']) + ' = ' + str(answers[0]))
 
                 self.answers.append(str(answers[0]))
                 print(answers, self.answers, symbol)
-                self.tasks.append('2) Найдите сопротивление лампы и напишите его, если сила тока в цепи ' + str(symbol['I1']) + ' A, напряжение в цепи ' + str(symbol['U1']) + ' В')
+                self.tasks.append('2) Найдите сопротивление лампы и напишите его, если сила тока в цепи ' + str(
+                    symbol['I1']) + ' A, напряжение в цепи ' + str(symbol['U1']) + ' В')
 
                 # Создаём третью задачу
                 answers, symbol = User_formulas.equation_solver(
@@ -791,11 +807,15 @@ class Phys(Subject):
                     {'U1': (1, 100), 'R1': (1, 220), 'R2': (1, 220)}, normal_check=True, after_point=5,
                     exception=['0'])
 
-                self.solve.append(f'3) Для расчёта нам нужна формула расчёта сопротивления двух параллельных резисторов: ((R1 * R2) / (R1 + R2)).\nСопротивление подставляем в закон ома и получим формулу: U / ((R1 * R2) / (R1 + R2)) = ' + str(answers[0]))
+                self.solve.append(
+                    f'3) Для расчёта нам нужна формула расчёта сопротивления двух параллельных резисторов: ((R1 * R2) / (R1 + R2)).\nСопротивление подставляем в закон ома и получим формулу: U / ((R1 * R2) / (R1 + R2)) = ' + str(
+                        answers[0]))
 
                 self.answers.append(str(answers[0]))
                 print(answers, self.answers, symbol)
-                self.tasks.append('3) Найдите силу тока в цепи и напишите её, если напряжение равно ' + str(symbol['U1']) + ' В, и два резистора параллельного подключения ' + str(symbol['R1']) + ' и ' + str(symbol['R2']) + ' Ом')
+                self.tasks.append('3) Найдите силу тока в цепи и напишите её, если напряжение равно ' + str(
+                    symbol['U1']) + ' В, и два резистора параллельного подключения ' + str(symbol['R1']) + ' и ' + str(
+                    symbol['R2']) + ' Ом')
 
         # Получаем hash
         self.program_hash = User_formulas.get_hash()
@@ -812,7 +832,8 @@ class UserFormulas:
         self.user_nums = user_nums  # Числа, который нужны при создании тестов, от пользователя
 
     # Функция для вычисления уравнений
-    def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False, exception: list[str] = (), not_in_exc: list[str] = ()):
+    def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False,
+                        exception: list[str] = (), not_in_exc: list[str] = ()):
         while True:
             # Создание нужных ячеек памяти
             results = []
@@ -1108,7 +1129,8 @@ class Statistics:
 @Bot.message_handler(commands=['start'])
 def start(message):
     # Вывод описания и кнопок
-    Bot.send_message(message.chat.id, 'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".\nЧтобы узнать какие есть тесты напишите /tests.',
+    Bot.send_message(message.chat.id,
+                     'Здравствуйте! Вы обратились к чат-боту с тестами. Я чат-бот для подготовки к тестам. Имеющий автоматическое создание примеров на тему теста. Чтобы узнать мой функционал, напишите "/help".\nЧтобы узнать какие есть тесты напишите /tests.',
                      reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
@@ -1152,14 +1174,18 @@ def help_for_user(message):
     markup = types.InlineKeyboardMarkup()
     button1 = types.InlineKeyboardButton("Сайт гит-хаба", url='https://github.com/aip-python-tech-2024/works-Boldaev')
     markup.add(button1)
-    Bot.send_message(message.chat.id, 'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev', reply_markup=markup)
+    Bot.send_message(message.chat.id,
+                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev',
+                     reply_markup=markup)
 
     # Вывод таблицы команд для пользователя
-    Bot.send_message(message.chat.id, 'Таблица команд и данных которая она будет спрашивать в дальнейшем.\nКоманды которые нужно посылать программе:')
+    Bot.send_message(message.chat.id,
+                     'Таблица команд и данных которая она будет спрашивать в дальнейшем.\nКоманды которые нужно посылать программе:')
     Bot.send_message(message.chat.id, f"```\n{table_str}```", parse_mode='MarkdownV2')
 
     # Вывод правил ввода ответов
-    Bot.send_message(message.chat.id, 'Правила ввода ответов:\nВ основном все вопросы выбираются на кнопках или вводятся если их нет.\nЕсли кнопки не появились, то проверьте есть ли справа от места ввода сообщения квадрат с 4-я кружочками. Если да, то нажмите на него и появятся кнопки.\nЕсли их нет, то введите команду /start или /help для их появления, если чат-бот не спрашивает о том, что нужно вводить.\nЕсли чат-бот просит ввести, то можно вводить сообщения больше чем одно слово.',
+    Bot.send_message(message.chat.id,
+                     'Правила ввода ответов:\nВ основном все вопросы выбираются на кнопках или вводятся если их нет.\nЕсли кнопки не появились, то проверьте есть ли справа от места ввода сообщения квадрат с 4-я кружочками. Если да, то нажмите на него и появятся кнопки.\nЕсли их нет, то введите команду /start или /help для их появления, если чат-бот не спрашивает о том, что нужно вводить.\nЕсли чат-бот просит ввести, то можно вводить сообщения больше чем одно слово.',
                      reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
@@ -1175,12 +1201,15 @@ def show_tests(message):
     # Проверка, что сообщение правильное
     if not isinstance(user_message, bool):
         # Вывод сообщения и ожидания предмета
-        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)', reply_markup=easy_markup("Математика", "Физика"))
+        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)',
+                         reply_markup=easy_markup("Математика", "Физика"))
 
         Bot.register_next_step_handler(message, get_subject_and_show_tests)
     else:
-        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
 
 def get_subject_and_show_tests(message):
@@ -1192,7 +1221,10 @@ def get_subject_and_show_tests(message):
 
         # Проверка, что предметы в нужном диапазоне
         if user_message[0] not in SUBJECTS:
-            Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+            Bot.send_message(message.chat.id,
+                             f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}',
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                      "/start_test"))
             return False
 
         user_answer = Statistics.get_tests(user_message)
@@ -1201,12 +1233,19 @@ def get_subject_and_show_tests(message):
 
     # Получение результата в зависимости от ответа
     if user_answer == 'Неизвестное сообщение или неправильный ввод.' or user_answer == 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".':
-        Bot.send_message(message.chat.id, user_answer, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, user_answer,
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
     elif len(user_answer) >= 20:
-        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index") + "\nНапишите /next для вывода тестов дальше.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, array_for_message(user_answer,
+                                                            omissions="index") + "\nНапишите /next для вывода тестов дальше.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
     else:
-        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"),
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
     # Сохраняем человека, для продолжения просмотра тестов
     if message.chat.id not in user_test_indexes.keys():
@@ -1220,26 +1259,39 @@ def next_tests(message):
     user_message = check_message(message, 1, user_command='/next')
 
     if not user_message:
-        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
-        Bot.send_message(message.chat.id, "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return
     else:
         user_test_indexes[message.chat.id][0] += 20
 
     # Выводим человеку тесты
     user_answer = Statistics.get_tests(user_test_indexes[message.chat.id][1])
-    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0], end=user_test_indexes[message.chat.id][0] + 20)
+    user_answer = array_for_message(user_answer, omissions="index", start_ind=user_test_indexes[message.chat.id][0],
+                                    end=user_test_indexes[message.chat.id][0] + 20)
 
     if len(user_answer.split()) // 2 >= 20:
-        Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, user_answer + "\nНапишите /next для вывода тестов дальше.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
     elif 0 < len(user_answer.split()) // 2 < 20:
-        Bot.send_message(message.chat.id, user_answer, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, user_answer,
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
     else:
-        Bot.send_message(message.chat.id, "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests subject'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_test_indexes[message.chat.id]
 
 
@@ -1251,11 +1303,15 @@ def show_statistics(message):
 
     # Выводим сообщение
     if message_text:
-        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)', reply_markup=easy_markup("Математика", "Физика"))
+        Bot.send_message(message.chat.id, 'Введите предмет (математика, физика)',
+                         reply_markup=easy_markup("Математика", "Физика"))
 
         Bot.register_next_step_handler(message, get_subject_for_show_statistics)
     else:
-        Bot.send_message(message.chat.id, 'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: "/help".', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: "/help".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
 
 def get_subject_for_show_statistics(message):
@@ -1271,9 +1327,13 @@ def get_subject_for_show_statistics(message):
                                                       "/start_test"))
             return False
 
-        Bot.send_message(message.chat.id, 'Введите номер или название теста', reply_markup=telebot.types.ReplyKeyboardRemove())
+        Bot.send_message(message.chat.id, 'Введите номер или название теста',
+                         reply_markup=telebot.types.ReplyKeyboardRemove())
     else:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     Bot.register_next_step_handler(message, get_index_of_test_for_show_statistics, message_text)
@@ -1302,9 +1362,14 @@ def get_index_of_test_for_show_statistics(message, subject):
 
             statistics = array_for_message(answer)
 
-        Bot.send_message(message.chat.id, statistics, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, statistics,
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
     else:
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод. \nВозможно вы хотели ввести: /test_statistics.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
 
 @Bot.message_handler(commands=['find'])
@@ -1313,7 +1378,10 @@ def find_similar(message):
     message_text = check_message(message, 1, user_command='/find', strict=True)
 
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find subject name.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     # Спрашиваем предмет
@@ -1330,12 +1398,18 @@ def get_subject_to_find_similar(message):
 
     # Проверяем что правильный вывод
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     # Проверка, что предметы в нужном диапазоне
     if message_text[0] not in SUBJECTS:
-        Bot.send_message(message.chat.id, f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         f'Такого предмета пока нет. Выберите предмет на кнопке или из списка при следующей попытке: {SUBJECTS}',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     # Спрашиваем текст
@@ -1352,7 +1426,10 @@ def get_text_to_find_similar(message, subject):
 
     # Проверяем то правильный вывод
     if isinstance(message_text, bool):
-        Bot.send_message(message.chat.id, "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id,
+                         "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /find.\nКоманда для помощи: '/help'.",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     # Доделываем сообщение
@@ -1362,14 +1439,17 @@ def get_text_to_find_similar(message, subject):
     try:
         similar = find_similar_words(message_text[0], ' '.join(message_text[1:]))
     except UnboundLocalError:
-        Bot.send_message(message.chat.id, "Ваша строка некорректна", reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, "Ваша строка некорректна",
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     # Проверка, что мы получили массив слов
     if not isinstance(similar, str):
         similar = array_for_message(similar)
 
-    Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar, reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+    Bot.send_message(message.chat.id, 'топ-5 похожих тестов по запросу:\n' + similar,
+                     reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 # Функция для начала тестов
@@ -1385,10 +1465,12 @@ def start_test(message):
     if isinstance(message_text, bool):
         Bot.send_message(message.chat.id,
                          "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test subject name.\nКоманда для помощи: '/help'.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
-    Bot.send_message(message.chat.id, 'Введите предмет (математика/физика)', reply_markup=easy_markup('Математика', 'Физика'))
+    Bot.send_message(message.chat.id, 'Введите предмет (математика/физика)',
+                     reply_markup=easy_markup('Математика', 'Физика'))
 
     Bot.register_next_step_handler(message, get_subject_for_start_test)
 
@@ -1403,7 +1485,8 @@ def get_subject_for_start_test(message):
     if isinstance(message_text, bool) or message_text[0] not in SUBJECTS:
         Bot.send_message(message.chat.id,
                          "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test.\nКоманда для помощи: '/help'.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     if message_text[0] in MATH_SUB:
@@ -1425,13 +1508,15 @@ def get_ind_for_start_test(message, subject):
 
     if message_text == ['/tests']:
         Bot.send_message(message.chat.id, 'Прохождение теста окончено, напишите команду /tests снова',
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     if isinstance(message_text, bool):
         Bot.send_message(message.chat.id,
                          "Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /start_test.\nКоманда для помощи: '/help'.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return False
 
     message_text = subject + message_text
@@ -1441,21 +1526,26 @@ def get_ind_for_start_test(message, subject):
         test_name = Statistics.find_name(message_text[0], int(message_text[1]))
         if test_name is None:
             Bot.send_message(message.chat.id, 'Такого номера теста нет.',
-                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                      "/start_test"))
         else:
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)", reply_markup=easy_markup('Да', 'Нет'))
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)",
+                             reply_markup=easy_markup('Да', 'Нет'))
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
     else:
         test_name = ' '.join(message_text[1:])
         if test_name in Statistics.get_tests(message_text):
-            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)", reply_markup=easy_markup('Да', 'Нет'))
+            Bot.send_message(message.chat.id, f"Вы хотите начать тест по имени: '{test_name}'? (да/нет; yes/no; y/n)",
+                             reply_markup=easy_markup('Да', 'Нет'))
             user_tests[message.chat.id] = test_name
 
             Bot.register_next_step_handler(message, check_for_start)
         else:
-            Bot.send_message(message.chat.id, Statistics.get_tests(message_text[0]), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+            Bot.send_message(message.chat.id, Statistics.get_tests(message_text[0]),
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                      "/start_test"))
 
 
 def check_for_start(message):
@@ -1471,10 +1561,14 @@ def check_for_start(message):
         Bot.send_message(message.chat.id, 'Вы хотите получить решение? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, check_for_solve)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Тест не начался.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, 'Тест не начался.',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1482,7 +1576,9 @@ def check_for_start(message):
         return True
     else:
         Bot.send_message(message.chat.id,
-                         'Некорректный ввод, будет считаться что вы ввели "нет".', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         'Некорректный ввод, будет считаться что вы ввели "нет".',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
 
 
@@ -1513,14 +1609,17 @@ def check_for_solve(message):
         Bot.send_message(message.chat.id, 'Решение теста не будет.\nУ вас есть хэш? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] == '/end':
-        Bot.send_message(message.chat.id, 'Создание теста прекращено.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, 'Создание теста прекращено.',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id,
+                         'Некорректный ввод, будет считаться что вы ввели "нет".\nУ вас есть хэш? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, get_hash_and_start_test)
 
 
@@ -1545,7 +1644,8 @@ def ask_for_hash(message):
         get_hash_and_start_test(message)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.',
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
@@ -1572,7 +1672,6 @@ def get_hash(message):
         user_hash = message_text[0]
     else:
         user_hash = []
-    print(user_hash, message_text)
 
     get_hash_and_start_test(message)
 
@@ -1589,23 +1688,28 @@ def get_hash_and_start_test(message):
     else:
         message_text = [False]
 
+    if message_text[-1] == '.':
+        message_text = message_text[:-1]
+
     # Проверяем ответ
     if user_hash:
         Bot.send_message(message.chat.id, 'Тест начат, ваш хэш принят.\nНачалось создание теста...')
         create_test(message, need_for_create_solve, user_hash=user_hash)
-    elif message_text[0] in ('нет', 'no', 'n'):
+    elif message_text[0] in ('нет', 'no', 'n', 'Нет', 'НЕТ', 'No', 'NO', 'N', 'Н'):
         Bot.send_message(message.chat.id, 'Началось создание теста...')
         create_test(message, need_for_create_solve)
     elif message_text[0] == '/end':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.',
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         del user_tests[message.chat.id]
 
         # Очищаем следующий шаг
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         return True
     else:
-        Bot.send_message(message.chat.id, 'Некорректный ввод, будет считаться что вы ввели "нет" или ваш hash недействителен.')
+        Bot.send_message(message.chat.id,
+                         'Некорректный ввод, будет считаться что вы ввели "нет" или ваш hash недействителен.')
         create_test(message, need_for_create_solve)
 
 
@@ -1629,14 +1733,18 @@ def create_test(message, need_solve: bool, user_hash=''):
     user_tests[message.chat.id].create_test()
 
     # Выводим правила ввода ответов
-    Bot.send_message(message.chat.id, 'Правила ввода ответов:\nВ основном все вопросы выбираются на кнопках или вводятся если их нет.\nЕсли кнопки не появились, то проверьте есть ли справа от места ввода сообщения квадрат с 4-я кружочками. Если да, то нажмите на него и появятся кнопки.\nЕсли их нет, то введите команду /start или /help для их появления, если чат-бот не спрашивает о том, что нужно вводить.\nЕсли чат-бот просит ввести, то можно вводить сообщения больше чем одно слово.')
+    Bot.send_message(message.chat.id,
+                     'Правила ввода ответов:\nВ основном все вопросы выбираются на кнопках или вводятся если их нет.\nЕсли кнопки не появились, то проверьте есть ли справа от места ввода сообщения квадрат с 4-я кружочками. Если да, то нажмите на него и появятся кнопки.\nЕсли их нет, то введите команду /start или /help для их появления, если чат-бот не спрашивает о том, что нужно вводить.\nЕсли чат-бот просит ввести, то можно вводить сообщения больше чем одно слово.')
 
-    # Выводим hash
-    Bot.send_message(message.chat.id, f'Hash для повторного прохождения теста: {user_tests[message.chat.id].show_hash()}',
-                     reply_markup=easy_markup('/answer', '/end', '/help'))
+    # Выводим hash с HTML-разметкой
+    Bot.send_message(
+        message.chat.id,
+        f"Hash для повторного прохождения теста: `{user_tests[message.chat.id].show_hash()}`",
+        parse_mode="MARKDOWN")
+
     # Выводим тест
     tasks_txt, check = user_tests[message.chat.id].show_test()
-    Bot.send_message(message.chat.id, tasks_txt)
+    Bot.send_message(message.chat.id, tasks_txt, reply_markup=easy_markup('/answer', '/end', '/help'))
 
     # Заходим в петлю проверки ответов
     Bot.register_next_step_handler(message, save_answers)
@@ -1696,22 +1804,27 @@ def check_message_text(message, message_text):
         show_results(message)
     elif message_text[0] == '/help':
         help_for_user(message)
-        Bot.send_message(message.chat.id, 'Продолжайте решать задачи по команде /answer. Для выхода из задач введите /end.', reply_markup=easy_markup('/answer', '/end', '/help'))
+        Bot.send_message(message.chat.id,
+                         'Продолжайте решать задачи по команде /answer. Для выхода из задач введите /end.',
+                         reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     elif isinstance(message_text[0], int):
         Bot.send_message(message.chat.id,
-                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.", reply_markup=easy_markup('/answer', '/end', '/help'))
+                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.",
+                         reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     elif int(message_text[0]) <= int(check):
         user_tests[message.chat.id].add_answer(check, int(message_text[0]), message_text[1])
-        Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.", reply_markup=easy_markup('/answer', '/end', '/help'))
+        Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.",
+                         reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
     else:
         Bot.send_message(message.chat.id,
-                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.", reply_markup=easy_markup('/answer', '/end', '/help'))
+                         "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.",
+                         reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
         Bot.register_next_step_handler(message, save_answers)
 
@@ -1721,7 +1834,9 @@ def show_results(message):
     Bot.clear_step_handler_by_chat_id(message.chat.id)
 
     if len(user_tests[message.chat.id].user_answers) == 0:
-        Bot.send_message(message.chat.id, 'Вы не дали ни одного ответа, результат теста не будет засчитан.', reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, 'Вы не дали ни одного ответа, результат теста не будет засчитан.',
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
         return True
     else:
         # Выводим решения (если нужно)
@@ -1730,10 +1845,13 @@ def show_results(message):
             Bot.send_message(message.chat.id, solve)
 
         # Выводим проверку ответов
-        Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers(), reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+        Bot.send_message(message.chat.id, user_tests[message.chat.id].check_answers(),
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
         # Выводим статистику
-        Statistics.add_statistics(user_tests[message.chat.id].get_point(), user_tests[message.chat.id].get_subject(), message.chat.id,
+        Statistics.add_statistics(user_tests[message.chat.id].get_point(), user_tests[message.chat.id].get_subject(),
+                                  message.chat.id,
                                   user_tests[message.chat.id].name_test)
 
     # Удаляем человека из памяти
@@ -1742,19 +1860,26 @@ def show_results(message):
     return True
 
 
+# Ответ на все неизвестные ссобщения
+@Bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
+    Bot.send_message(message.chat.id,
+                     'Такой команды у бота нет, для помощи введите команду /help или выберите на кнопке!',
+                     reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+
+
 # testiki
 taps = {}
 
 
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
-
     if not taps.get(str(message.chat.id), False):
         msg = Bot.send_message(message.chat.id, 'Счётчик: 0')
 
         from time import sleep
         for i in range(1, 11):
-            Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text = str(i))
+            Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text=str(i))
             sleep(1)
 
     chat_id = str(message.chat.id)
