@@ -673,7 +673,8 @@ class Math(Subject):
                 equations = ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"]
                 answers, symbol = User_formulas.equation_solver(
                     ["b^2-4*a*c=D", "((-b) - sqrt(D)) / (2*a)", "((-b) + sqrt(D)) / (2*a)"],
-                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0)
+                    {'a': (1, 1), 'b': (-20, 20), 'c': (-20, 20)}, normal_check=True, after_point=0,
+                    exception=['0'], not_in_exc=['D'])
 
                 # Создаём уравнение в целом
                 other = UserFormulas.show_task_eq("x^2 bx c", a=symbol["a"], b=symbol["b"], c=symbol["c"]) + ' = 0'
@@ -888,10 +889,9 @@ class UserFormulas:
                         if self.user_nums:
                             numbers = update_dicts_with_array(numbers, user_numbers)
                         else:
-                            continue
+                            self.user_nums = ''
                     else:
                         self.user_nums = ''
-                        continue
 
                 # Заранее определяем массив переменных
                 symbols_list = list(numbers.keys())  # Преобразуем в список
@@ -931,8 +931,9 @@ class UserFormulas:
                             num_for_exs.append(numbers.get(exc))
                     for number in num_for_exs:
                         if number in exception:
+                            if self.user_nums:
+                                self.user_nums = ''
                             continue
-
                 # Округляем числа если это нужно
                 if round_check:
                     results = UserFormulas.round_nums(results, after_point)
@@ -948,6 +949,12 @@ class UserFormulas:
 
                             # Возвращаем результат
                             return results, numbers
+                        else:
+                            if self.user_nums:
+                                self.user_nums = ''
+                    else:
+                        if self.user_nums:
+                            self.user_nums = ''
                 else:
                     if any(results):
                         # Сохраняем числа для hash.
@@ -957,6 +964,9 @@ class UserFormulas:
 
                         # Возвращаем результат
                         return results, numbers
+                    else:
+                        if self.user_nums:
+                            self.user_nums = ''
 
                 # Удаляем результаты
                 results.clear()
@@ -1261,13 +1271,14 @@ def get_subject_and_show_tests(message):
 @Bot.message_handler(commands=['next'])
 def next_tests(message):
     # Убираем факторы, которые могу быть причиной неизвестного сообщения
-    user_message = check_message(message, 1, user_command='/next')
+    user_message = check_message(message, 1, user_command='/next', strict=True)
 
     if not user_message:
         Bot.send_message(message.chat.id,
-                         'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /tests.\nКоманда для помощи: "/help".',
+                         'Неизвестное сообщение или неправильный ввод.\nВозможно вы хотели ввести: /next.\nКоманда для помощи: "/help".',
                          reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
                                                   "/start_test"))
+        return False
 
     # Сохраняем и добавляем просмотр к человеку
     if message.chat.id not in user_test_indexes.keys():
@@ -1275,7 +1286,7 @@ def next_tests(message):
                          "Напишите команду '/tests', чтобы программа поняла предмет который вам нужен.",
                          reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
                                                   "/start_test"))
-        return
+        return False
     else:
         user_test_indexes[message.chat.id][0] += 20
 
@@ -1296,14 +1307,19 @@ def next_tests(message):
         Bot.send_message(message.chat.id,
                          "Вы просмотрели все тесты, если вам нужно начать сначала, то снова напишите команду '/tests'.")
 
-        Bot.send_message(message.chat.id,
-                         "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
-        subject = user_test_indexes[message.chat.id][1]
+        # Проверка, что человек смотрел больше 20 тестов
+        if len(user_answer.split()) >= 20:
+            Bot.send_message(message.chat.id,
+                             "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+            subject = user_test_indexes[message.chat.id][1]
+
+            del user_test_indexes[message.chat.id]
+
+            Bot.register_next_step_handler(message, check_for_easy_start_test, subject)
 
         del user_test_indexes[message.chat.id]
 
-        Bot.register_next_step_handler(message, check_for_easy_start_test, subject)
 
 
 # Проверка, что пользователь решил ввести число
@@ -1457,7 +1473,7 @@ def get_subject_to_find_similar(message):
     Bot.register_next_step_handler(message, get_text_to_find_similar, message_text)
 
 
-def get_text_to_find_similar(message, subject):
+def get_text_to_find_similar(message, get_subject):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
     message_text = check_message(message, 0)
 
@@ -1470,7 +1486,7 @@ def get_text_to_find_similar(message, subject):
         return False
 
     # Доделываем сообщение
-    message_text = subject + message_text
+    message_text = get_subject + message_text
 
     # Находим топ-5 похожих слов
     try:
