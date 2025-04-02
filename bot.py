@@ -1321,7 +1321,6 @@ def next_tests(message):
         del user_test_indexes[message.chat.id]
 
 
-
 # Проверка, что пользователь решил ввести число
 def check_for_easy_start_test(message, subject):
     # Убираем факторы, которые могут быть причиной неизвестного сообщения
