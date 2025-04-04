@@ -1247,11 +1247,13 @@ def get_subject_and_show_tests(message):
                                                   "/start_test"))
     else:
         Bot.send_message(message.chat.id, array_for_message(user_answer, omissions="index"),
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
         Bot.send_message(message.chat.id,
                          "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
-                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                         reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                  "/start_test"))
 
         Bot.register_next_step_handler(message, check_for_easy_start_test, user_message[0])
 
@@ -1304,7 +1306,8 @@ def next_tests(message):
         if len(user_answer.split()) >= 20:
             Bot.send_message(message.chat.id,
                              "Если вы хотите начать тест по этому предмету, то сейчас введите его номер или название.",
-                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
+                             reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find",
+                                                      "/start_test"))
             subject = user_test_indexes[message.chat.id][1]
 
             del user_test_indexes[message.chat.id]
@@ -1936,7 +1939,7 @@ def show_results(message):
     return True
 
 
-# Ответ на все неизвестные собщения
+# Ответ на все неизвестные сообщения
 @Bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     Bot.send_message(message.chat.id,
