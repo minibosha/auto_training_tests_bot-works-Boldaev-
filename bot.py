@@ -66,7 +66,7 @@ def is_number(string: str) -> bool:
     try:
         float(string)
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
@@ -146,13 +146,6 @@ def process_numbers(input_str: str) -> str:
 
     # Возвращаем сжатую строку с тем же разделителем
     return separator.join(compressed_numbers)
-
-
-def counter():
-    count = 0
-    while True:
-        yield count
-        count += 1
 
 
 # Функция разделения по языкам
@@ -1832,6 +1825,9 @@ def save_answers(message):
     elif isinstance(message_text, bool):
         message_text = [False]
         check_message_text(message, message_text)
+    else:
+        message_text = [False]
+        check_message_text(message, message_text)
 
 
 def get_num_of_task_for_save_answer(message):
@@ -1840,10 +1836,15 @@ def get_num_of_task_for_save_answer(message):
     if isinstance(message_text, bool):
         message_text = [False]
         check_message_text(message, message_text)
+    # Проверка, что число
+    elif not is_number(message_text[0]):
+        message_text = ['Not_num']
 
-    Bot.send_message(message.chat.id, 'Введите ваш ответ.', reply_markup=telebot.types.ReplyKeyboardRemove())
+        check_message_text(message, message_text)
+    else:
+        Bot.send_message(message.chat.id, 'Введите ваш ответ.', reply_markup=telebot.types.ReplyKeyboardRemove())
 
-    Bot.register_next_step_handler(message, get_answer_for_task_for_save_answer, message_text)
+        Bot.register_next_step_handler(message, get_answer_for_task_for_save_answer, message_text)
 
 
 def get_answer_for_task_for_save_answer(message, num):
@@ -1852,10 +1853,10 @@ def get_answer_for_task_for_save_answer(message, num):
     if isinstance(message_text, bool):
         message_text = [False]
         check_message_text(message, message_text)
+    else:
+        message_text[0] = message_text[0].replace(',', '.')
 
-    message_text[0] = message_text[0].replace(',', '.')
-
-    check_message_text(message, num + message_text)
+        check_message_text(message, num + message_text)
 
 
 def check_message_text(message, message_text):
@@ -1871,24 +1872,36 @@ def check_message_text(message, message_text):
                          'Продолжайте решать задачи по команде /answer. Для выхода из задач введите /end.',
                          reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        Bot.register_next_step_handler(message, save_answers)
+    # Проверка, что задача - число
+    elif message_text[0] == 'Not_num':
+        Bot.send_message(message.chat.id,
+                         "Вы некорректно ввели ответ. Нужно ввести номер задачи числом. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.",
+                         reply_markup=easy_markup('/answer', '/end', '/help'))
+        # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
     elif isinstance(message_text[0], int):
         Bot.send_message(message.chat.id,
                          "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.",
                          reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
     elif int(message_text[0]) <= int(check):
         user_tests[message.chat.id].add_answer(check, int(message_text[0]), message_text[1])
         Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.",
                          reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
     else:
         Bot.send_message(message.chat.id,
                          "Вы некорректно ввели ответ. Формат ответа: /answer.\nЧтобы закончить тест введите '/end'.",
                          reply_markup=easy_markup('/answer', '/end', '/help'))
         # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
 
 
