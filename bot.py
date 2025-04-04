@@ -1976,7 +1976,7 @@ def nothing(message):
 
         for i in range(1, len(stages)):
             Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text=stages[i] + ' : ' + str(i))
-            sleep(-1*(i-len(stages)) / 100)
+            sleep(-1 * (i - len(stages)) / 100)
 
         Bot.delete_message(message.chat.id, msg.message_id)
         sleep(0.5)
