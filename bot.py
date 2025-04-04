@@ -784,7 +784,7 @@ class Phys(Subject):
 
                 self.answers.append(str(answers[0]))
                 self.tasks.append('1) Найдите силу тока в цепи и напишите её, если в цепи напряжение равно ' +
-                                  str(symbol["U"]) + ' А, а сопротивление лампы равно ' + str(symbol["R"]) + ' Ом')
+                                  str(symbol["U"]) + ' В    , а сопротивление лампы равно ' + str(symbol["R"]) + ' Ом')
 
                 print(answers, self.answers, symbol, self.solve, self.tasks)
 
