@@ -1939,14 +1939,6 @@ def show_results(message):
     return True
 
 
-# Ответ на все неизвестные сообщения
-@Bot.message_handler(func=lambda message: True)
-def handle_all_messages(message):
-    Bot.send_message(message.chat.id,
-                     'Такой команды у бота нет, для помощи введите команду /help или выберите на кнопке!',
-                     reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
-
-
 # testiki
 taps = {}
 
@@ -1979,6 +1971,14 @@ def nothing(message):
             Bot.send_message(message.chat.id,
                              f'Вы закончили игру. Вы тапнули хомяка {taps[chat_id]} раз(а). Напишите /testiki, чтобы начать заново.')
             del taps[chat_id]  # Удаляем запись о пользователе, чтобы начать заново
+
+
+# Ответ на все неизвестные сообщения
+@Bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
+    Bot.send_message(message.chat.id,
+                     'Такой команды у бота нет, для помощи введите команду /help или выберите на кнопке!',
+                     reply_markup=easy_markup("/help", "/tests", "/next", "/test_statistics", "/find", "/start_test"))
 
 
 """ Запуск бота """
