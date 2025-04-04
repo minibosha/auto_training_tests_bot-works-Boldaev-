@@ -1945,16 +1945,16 @@ taps = {}
 
 @Bot.message_handler(commands=['testiki'])
 def nothing(message):
-    if not taps.get(str(message.chat.id), False):
+    chat_id = str(message.chat.id)
+    taps_count = taps.get(chat_id, -1)
+
+    if not taps.get(str(message.chat.id), False) and taps_count != -1 :
         msg = Bot.send_message(message.chat.id, 'Счётчик: 0')
 
         from time import sleep
-        for i in range(1, 11):
+        for i in range(1, 6):
             Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text=str(i))
             sleep(1)
-
-    chat_id = str(message.chat.id)
-    taps_count = taps.get(chat_id, -1)
 
     if taps_count == -1:
         Bot.send_message(message.chat.id,
