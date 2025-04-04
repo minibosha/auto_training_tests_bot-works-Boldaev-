@@ -1948,13 +1948,38 @@ def nothing(message):
     chat_id = str(message.chat.id)
     taps_count = taps.get(chat_id, -1)
 
-    if not taps.get(str(message.chat.id), False) and taps_count != -1 :
-        msg = Bot.send_message(message.chat.id, 'Счётчик: 0')
-
+    if not taps.get(str(message.chat.id), False) and taps_count != -1:
         from time import sleep
-        for i in range(1, 6):
-            Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text=str(i))
-            sleep(1)
+        stages = [
+            'Счётчик',
+            "С̣ч̣ё̣т̣ч̣и̣к̣",
+            "С̤ч̤ё̤т̤ч̤и̤к̤",
+            "С̑ч̑ёт̑ч̑и̑к̑",
+            "С̭ч̭ё̭т̭ч̭и̭к̭",
+            "С͇ч͇ё͇т͇ч͇и͇к͇",
+            "С̽ч̽ё̽т̽ч̽и̽к̽",
+            "С͐ч͐ё͐т͐ч͐и͐к͐",
+            "С̾ч̾ё̾т̾ч̾и̾к̾",
+            "С⃰ч⃰ё⃰т⃰ч⃰и⃰к⃰",
+            "Ҫ҈ч҈ё҈т҈ч҈и҈к҈",
+            "Ꙅ҉ꞓ҉ё҉ꞇ҉ꞓ҉і҉к҉",
+            "S̷c̷h̷ö̷t̷c̷h̷i̷k̷",
+            "S̸c̸h̸ö̸t̸c̸h̸i̸k̸",
+            "S⃨c⃨h⃨ö⃨t⃨c⃨h⃨i⃨k⃨",
+            "S҈c҈h҈ö҈t҈c҈h҈i҈k҈",
+            "S҈͟c҈͟h҈͟ö҈͟t҈͟c҈͟h҈͟i҈͟k҈͟",
+            "       "
+        ]
+
+        msg = Bot.send_message(message.chat.id, stages[0] + ' : 0')
+        sleep(0.2)
+
+        for i in range(1, len(stages)):
+            Bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id, text=stages[i] + ' : ' + str(i))
+            sleep(-1*(i-len(stages)) / 100)
+
+        Bot.delete_message(message.chat.id, msg.message_id)
+        sleep(0.5)
 
     if taps_count == -1:
         Bot.send_message(message.chat.id,
