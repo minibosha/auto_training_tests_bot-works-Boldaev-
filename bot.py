@@ -1898,10 +1898,24 @@ def check_message_text(message, message_text):
         # Ждём ответы дальше
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
+    elif int(message_text[0]) > int(check):
+        Bot.send_message(message.chat.id, f"Такого номера задачи нет. Перепроверьте номер задачи.",
+                         reply_markup=easy_markup('/answer', '/finish', '/help'))
+        # Ждём ответы дальше
+        Bot.clear_step_handler_by_chat_id(message.chat.id)
+        Bot.register_next_step_handler(message, save_answers)
     elif int(message_text[0]) <= int(check):
         user_tests[message.chat.id].add_answer(check, int(message_text[0]), message_text[1])
         Bot.send_message(message.chat.id, f"Ответ {message_text[1]} на {message_text[0]} вопрос: принят.",
                          reply_markup=easy_markup('/answer', '/finish', '/help'))
+
+        # Удаляем данные которые пользователь вводил
+        for i in range(0, 4):
+            try:
+                Bot.delete_message(message.chat.id, message.message_id - i)
+            except telebot.apihelper.ApiTelegramException:
+                break
+
         # Ждём ответы дальше
         Bot.clear_step_handler_by_chat_id(message.chat.id)
         Bot.register_next_step_handler(message, save_answers)
