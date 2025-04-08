@@ -343,6 +343,33 @@ def check_message(command, n, user_command=None, strict=False, none_lower=False,
         return txt[1:]
 
 
+# Нормализует математическое выражение:
+def normalize_expression(expr: str) -> str:
+    # Шаг 1: Упрощение последовательностей операторов
+    def replace_operators(match: re.Match) -> str:
+        operators = match.group().replace(" ", "")
+        minus_count = operators.count("-")
+        return " + " if minus_count % 2 == 0 else " - "
+
+    expr = re.sub(r"(\s*[+-]\s*){2,}", replace_operators, expr)
+
+    # Шаг 2: Обработка унарных минусов после * и /
+    expr = re.sub(
+        r"([*/])\s*-\s*(\d+(?:\.\d+)?)",
+        r"\1(-\2)",
+        expr
+    )
+
+    # Шаг 3: Нормализация пробелов
+    expr = re.sub(r"\s*([*/+])\s*", r" \1 ", expr)  # Пробелы для * / +
+    expr = re.sub(r"\s*-\s*", " - ", expr)  # Пробелы для -
+    expr = re.sub(r"\(\s*", "(", expr)  # Убираем пробелы в скобках
+    expr = re.sub(r"\s*\)", ")", expr)
+    expr = re.sub(r"\s+", " ", expr).strip()  # Убираем двойные пробелы
+
+    return expr
+
+
 """ Классы """
 
 
@@ -360,11 +387,9 @@ class Hash:
         HEX_RUSS = {'а': 'A', 'б': 'B', 'в': 'C', 'г': 'D', 'д': 'E', 'е': 'F'}
         unencrypted_str = self.encrypted.split(',')  # Разделяем строки по запятым
         result = []
-        print(self.string, self.encrypted)
         # Добавляем запятые в конец строк
         for ind in range(len(unencrypted_str)):
             unencrypted_str[ind] += ' ,'
-        print(result)
 
         # Разделяем символы
         for stroke in unencrypted_str:
@@ -621,6 +646,22 @@ class Subject:
         ans = ''
         m = 0
         for ind in range(len(self.answers)):
+            # Переделываем строки float в int, если нет остатка.
+            # Обработка user_answers
+            value = self.user_answers[ind]
+            if isinstance(value, str) and is_number(value):
+                num = float(value)
+                self.user_answers[ind] = int(num) if num.is_integer() else num
+
+            # Обработка answers
+            value = self.answers[ind]
+            if isinstance(value, str) and is_number(value):
+                num = float(value)
+                self.answers[ind] = int(num) if num.is_integer() else num
+
+            print(self.user_answers[ind], self.answers[ind])
+
+            # Добавляем сообщение
             ans += f'Задача №{ind + 1}.\nВаш ответ: {self.user_answers[ind]}.\nПравильный ответ: {self.answers[ind]}.\nВердикт: '
 
             # Вердикт
@@ -736,6 +777,18 @@ class Math(Subject):
                     self.answers.append(str(int(sum(answers))))
 
                 self.tasks.append(f'Решите три примера:\n1. {equations[0]}\n2. {equations[1]}\n3. {equations[2]}')
+            case "вычитание":
+                # Создаём три простых задачи и добавляем нужное по ним
+                self.solve.append(
+                    'Чтобы найти ответ нужно сложить два числа, чтобы это сделать воспользуйтесь калькулятором. Делается в одно действие')
+
+                for ind in range(3):
+                    answers, symbol = User_formulas.equation_solver(['a - b'], {'a': (0, 100), 'b': (0, 100)},
+                                                                    normal_check=True, after_point=0, positive=True)
+                    equations.append(UserFormulas.show_task_eq('a - b', a=symbol["a"], b=symbol["b"])[2:])
+                    self.answers.append(str(int(sum(answers))))
+
+                self.tasks.append(f'Решите три примера:\n1. {equations[0]}\n2. {equations[1]}\n3. {equations[2]}')
 
         # Получаем hash
         self.program_hash = User_formulas.get_hash()
@@ -827,7 +880,8 @@ class UserFormulas:
 
     # Функция для вычисления уравнений
     def equation_solver(self, eqs, ranges, normal_check=False, after_point=4, round_check=False,
-                        exception: list[str] = (), not_in_exc: list[str] = ()):
+                        exception: list[str] = (), not_in_exc: list[str] = (), positive: bool = False,
+                        negative: bool = False):
         while True:
             # Создание нужных ячеек памяти
             results = []
@@ -931,6 +985,20 @@ class UserFormulas:
                 if round_check:
                     results = UserFormulas.round_nums(results, after_point)
 
+                if positive:
+                    for num in results:
+                        if num <= 0:
+                            if self.user_nums:
+                                self.user_nums = ''
+                            results.clear()
+
+                if negative:
+                    for num in results:
+                        if num >= 0:
+                            if self.user_nums:
+                                self.user_nums = ''
+                            results.clear()
+
                 # Проверяем что числа в нужном диапазоне (до n знаков после запятой).
                 if normal_check:
                     if len(results) == len(equations):
@@ -1012,7 +1080,7 @@ class UserFormulas:
             equation = equation.replace(key, f"{sign} {abs(value)}")
 
         # Убираем лишний пробел перед первым знаком, если он есть
-        equation = equation.replace(' + ', ' + ').replace(' - ', ' - ')
+        equation = normalize_expression(equation)
 
         return equation
 
@@ -1668,10 +1736,12 @@ def check_for_solve(message):
     # Проверяем ответ
     if message_text[0] in ('да', 'yes', 'y'):
         need_for_create_solve = True
-        Bot.send_message(message.chat.id, 'Хорошо, мы сделаем решение.\nУ вас есть hash (Строка для повторного прохождения определённого теста)? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id,
+                         'Хорошо, мы сделаем решение.\nУ вас есть hash (Строка для повторного прохождения определённого теста)? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] in ('нет', 'no', 'n'):
-        Bot.send_message(message.chat.id, 'Решение теста не будет.\nУ вас есть hash (Строка для повторного прохождения определённого теста)? (да/нет; yes/no; y/n)')
+        Bot.send_message(message.chat.id,
+                         'Решение теста не будет.\nУ вас есть hash (Строка для повторного прохождения определённого теста)? (да/нет; yes/no; y/n)')
         Bot.register_next_step_handler(message, ask_for_hash)
     elif message_text[0] == '/finish':
         Bot.send_message(message.chat.id, 'Создание теста прекращено.',
@@ -1759,8 +1829,16 @@ def get_hash_and_start_test(message):
     # Проверяем ответ
     if user_hash:
         Bot.send_message(message.chat.id, 'Тест начат, ваш hash принят.\nНачалось создание теста...')
+
+        # Вывод, что начался тест
+        print('Test is started.')
+
         create_test(message, need_for_create_solve, user_hash=user_hash)
     elif message_text[0] in ('нет', 'no', 'n', 'Нет', 'НЕТ', 'No', 'NO', 'N', 'Н'):
+
+        # Вывод, что начался тест
+        print('Test is started.')
+
         Bot.send_message(message.chat.id, 'Началось создание теста...')
         create_test(message, need_for_create_solve)
     elif message_text[0] == '/finish':
