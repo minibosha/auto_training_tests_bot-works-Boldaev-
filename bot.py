@@ -1246,10 +1246,10 @@ def help_for_user(message):
 
     # Ссылка и переход для гит-хаба
     markup = types.InlineKeyboardMarkup()
-    button1 = types.InlineKeyboardButton("Сайт гит-хаба", url='https://github.com/aip-python-tech-2024/works-Boldaev')
+    button1 = types.InlineKeyboardButton("Сайт гит-хаба", url='https://github.com/minibosha/auto_training_tests_bot-works-Boldaev-')
     markup.add(button1)
     Bot.send_message(message.chat.id,
-                     'Ссылка-описание на гит хабе: https://github.com/aip-python-tech-2024/works-Boldaev',
+                     'Ссылка-описание на гит хабе: https://github.com/minibosha/auto_training_tests_bot-works-Boldaev-',
                      reply_markup=markup)
 
     Bot.send_message(message.chat.id,
